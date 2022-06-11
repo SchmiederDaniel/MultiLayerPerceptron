@@ -34,16 +34,16 @@ public class NeuralNetwork {
       for (int i = 0; i < x_train.length; i++) {
         NumpyArray x = NumpyArray.numpyArrayOf1DimArray(x_train[i]);
         NumpyArray y = NumpyArray.numpyArrayOf1DimArray(y_train[i]);
-  
+        
         //forward
         NumpyArray output = predict(x);
-  
+        
         //error
         error += lossFunction.loss(y, output);
         
         //backward
         NumpyArray grad = lossFunction.loss_prime(y, output);
-  
+        
         for (int j = layerArray.length - 1; j >= 0; j--) {
           Layer layer = layerArray[j];
           grad = layer.backward(grad, learning_rate);
@@ -54,5 +54,30 @@ public class NeuralNetwork {
       if (verbose)
         System.out.println("{" + (e + 1d) / epochs + "} error=" + error);
     }
+  }
+  
+  // Own train function
+  public void trainSingle(LossFunction lossFunction, double[] x_train, double[] y_train, double learning_rate, boolean verbose) {
+    double error = 0;
+    NumpyArray x = NumpyArray.numpyArrayOf1DimArray(x_train);
+    NumpyArray y = NumpyArray.numpyArrayOf1DimArray(y_train);
+    
+    //forward
+    NumpyArray output = predict(x);
+    
+    //error
+    error += lossFunction.loss(y, output);
+    
+    //backward
+    NumpyArray grad = lossFunction.loss_prime(y, output);
+    
+    for (int j = layerArray.length - 1; j >= 0; j--) {
+      Layer layer = layerArray[j];
+      grad = layer.backward(grad, learning_rate);
+    }
+    
+    error /= x_train.length;
+    if (verbose)
+      System.out.println("error=" + error);
   }
 }

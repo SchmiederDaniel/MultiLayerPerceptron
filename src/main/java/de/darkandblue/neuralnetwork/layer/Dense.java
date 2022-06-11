@@ -23,7 +23,6 @@ public class Dense extends Layer {
   
   @Override
   public NumpyArray backward(NumpyArray output_gradient, double learning_rate) {
-    System.out.println("teste " + output_gradient.dimension());
     // TODO: dimension output_gradient = (1, 1)
     NumpyArray weights_gradient = output_gradient.dot(input.transpose());
     NumpyArray input_gradient = weights.transpose().dot(output_gradient);

@@ -27,6 +27,27 @@ public class NetworkBuilder {
   }
   
   public NeuralNetwork build() {
+    
     return new NeuralNetwork(layerList.toArray(new Layer[0]));
+  }
+  
+  @Override
+  public String toString() {
+    StringBuilder stringBuilder = new StringBuilder();
+    
+    for (Layer layer : layerList) {
+      stringBuilder.append(layer.getClass());
+      stringBuilder.append(", ");
+    }
+    
+    String outputString;
+    if (layerList.size() == 0) {
+      stringBuilder.append("Empty");
+      outputString = stringBuilder.toString();
+    } else {
+      outputString = stringBuilder.substring(0, stringBuilder.length() - 2);
+    }
+    
+    return outputString;
   }
 }
