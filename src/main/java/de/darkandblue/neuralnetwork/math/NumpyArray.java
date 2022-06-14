@@ -284,4 +284,9 @@ public class NumpyArray {
 //    return output + "]";
     return Arrays.deepToString(data);
   }
+  
+  public NumpyArray copy() {
+    double[][] newData = Arrays.stream(data).map(double[]::clone).toArray(double[][]::new);
+    return new NumpyArray(newData);
+  }
 }

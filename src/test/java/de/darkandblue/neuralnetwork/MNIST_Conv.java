@@ -12,12 +12,12 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.List;
 
-public class MNIST extends JFrame {
+public class MNIST_Conv extends JFrame {
   public static void main(String[] args) throws IOException {
     new MNIST();
   }
   
-  public MNIST() throws IOException {
+  public MNIST_Conv() throws IOException {
     setDefaultCloseOperation(EXIT_ON_CLOSE);
     setSize(800, 900);
     add(new Scene());
@@ -40,7 +40,7 @@ public class MNIST extends JFrame {
     public Scene() throws IOException {
       imageList = MnistLoader.readImages();
       labelList = MnistLoader.readLabels();
-  
+      
       startAsyncThreads();
     }
     
@@ -76,7 +76,7 @@ public class MNIST extends JFrame {
       double[] x = pixelsToDouble(pixels);
       double[] y = new double[10];
       y[label] = 1;
-  
+      
       neuralNetwork.trainSingle(lossFunction, x, y, 0.1, false);
     }
     
@@ -96,7 +96,7 @@ public class MNIST extends JFrame {
       paintIndex++;
       paintIndex %= 60000;
       int[] pixels = imageList.get(paintIndex);
-  
+      
       BufferedImage image = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
       int[] pixelsOfImage = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
       for (int i = 0; i < pixelsOfImage.length; i++) {
@@ -107,7 +107,7 @@ public class MNIST extends JFrame {
       double[] x = pixelsToDouble(pixels);
       NumpyArray predict = neuralNetwork.predict(x);
       double[] y = predict.transpose().data[0];
-  
+      
       String out = "";
       for (int i = 0; i < y.length; i++) {
         out += i + "=" + (int) (y[i] * 100d) + "%  ";
