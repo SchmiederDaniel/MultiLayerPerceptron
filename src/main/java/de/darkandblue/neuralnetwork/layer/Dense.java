@@ -9,12 +9,18 @@ public class Dense extends Layer {
   public Dense(int input_size, int output_size) {
     weights = new NumpyArray(output_size, input_size);
     bias = new NumpyArray(output_size, 1);
-  
+    
     weights.randomize(-1, 1);
     bias.randomize(-1, 1);
   }
   
+  public Dense(NumpyArray weights, NumpyArray bias) {
+    this.weights = weights;
+    this.bias = bias;
+  }
+  
   NumpyArray input;
+  
   @Override
   public NumpyArray forward(NumpyArray input) {
     this.input = input;

@@ -1,9 +1,11 @@
 package de.darkandblue.neuralnetwork;
 
 import de.darkandblue.neuralnetwork.layer.activation.SigmoidActivation;
+import de.darkandblue.neuralnetwork.layer.activation.SoftMax;
 import de.darkandblue.neuralnetwork.layer.activation.TanhActivation;
 import de.darkandblue.neuralnetwork.layer.Dense;
 import de.darkandblue.neuralnetwork.layer.Layer;
+import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +18,18 @@ public class NetworkBuilder {
     return this;
   }
   
+  public NetworkBuilder dense(NumpyArray weights, NumpyArray bias) {
+    layerList.add(new Dense(weights, bias));
+    return this;
+  }
+  
   public NetworkBuilder sigmoid() {
     layerList.add(new SigmoidActivation());
+    return this;
+  }
+  
+  public NetworkBuilder softMax() {
+    layerList.add(new SoftMax());
     return this;
   }
   

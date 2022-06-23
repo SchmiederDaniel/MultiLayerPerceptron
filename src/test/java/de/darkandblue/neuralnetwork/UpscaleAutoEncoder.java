@@ -1,6 +1,8 @@
 package de.darkandblue.neuralnetwork;
 
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
+import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
+import de.darkandblue.neuralnetwork.lossfunction.MSE;
 import de.darkandblue.neuralnetwork.lossfunction.OwnLoss;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
@@ -30,11 +32,9 @@ public class UpscaleAutoEncoder extends JFrame {
   class Scene extends JPanel {
     List<int[]> imageList;
     List<Integer> labelList;
-    BinaryCrossEntropy lossFunction = new BinaryCrossEntropy();
+    LossFunction lossFunction = new BinaryCrossEntropy();
     NeuralNetwork neuralNetwork = new NetworkBuilder()
-      .dense(7 * 7, 392)
-      .sigmoid()
-      .dense(392, 784)
+      .dense(7 * 7, 784)
       .sigmoid()
       .build();
     
@@ -49,7 +49,7 @@ public class UpscaleAutoEncoder extends JFrame {
       new Thread(() -> {
         while (true) {
           try {
-            Thread.sleep(1300);
+            Thread.sleep(16);
           } catch (InterruptedException e) {
             throw new RuntimeException(e);
           }
@@ -68,6 +68,7 @@ public class UpscaleAutoEncoder extends JFrame {
     
     void train() {
       trainIndex++;
+      trainIndex %= 60000;
       
       int[] pixels = imageList.get(trainIndex);
       double[] x = pixelsToDouble(downScalePixels(pixels));
@@ -115,13 +116,19 @@ public class UpscaleAutoEncoder extends JFrame {
     }
     
     int thinkIndex;
+    final static int IMAGE_CHANGE_TIME = 1300;
+    long lastImageChange = System.currentTimeMillis();
     
     public void paint(Graphics graphics) {
       super.paint(graphics);
-      thinkIndex++;
-      thinkIndex %= 60000;
+      if (System.currentTimeMillis() - lastImageChange > IMAGE_CHANGE_TIME) {
+        thinkIndex++;
+        thinkIndex %= 60000;
+        
+        lastImageChange = System.currentTimeMillis();
+      }
       
-      int[] pixels = imageList.get(trainIndex);
+      int[] pixels = imageList.get(thinkIndex);
       int[] lowResPixels = downScalePixels(pixels);
       BufferedImage image = new BufferedImage(7, 7, BufferedImage.TYPE_INT_RGB);
       setPixels(lowResPixels, image);

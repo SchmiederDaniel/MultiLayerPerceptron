@@ -1,7 +1,5 @@
 package de.darkandblue.neuralnetwork.math;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -25,6 +23,15 @@ public class NumpyArray {
   
   public int cols() { // Spalte
     return data[0].length;
+  }
+  
+  public static NumpyArray identity(int n) {
+    double[][] newData = new double[n][n];
+    for (int i = 0; i < newData.length; i++) {
+      newData[i][i] = 1;
+    }
+    
+    return new NumpyArray(newData);
   }
   
   /*
