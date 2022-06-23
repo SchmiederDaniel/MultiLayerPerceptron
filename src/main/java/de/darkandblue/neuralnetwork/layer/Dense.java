@@ -36,4 +36,9 @@ public class Dense extends Layer {
     bias = bias.subtract(output_gradient.multiplyScalar(learning_rate)); // idk if bias is a vector or matrix
     return input_gradient;
   }
+  
+  @Override
+  public Layer copy() {
+    return new Dense(weights.copy(), bias.copy());
+  }
 }

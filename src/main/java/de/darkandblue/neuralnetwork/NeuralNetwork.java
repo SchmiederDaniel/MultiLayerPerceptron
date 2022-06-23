@@ -16,9 +16,22 @@ public class NeuralNetwork {
     return predict(NumpyArray.numpyArrayOf1DimArray(input));
   }
   
-  public NumpyArray predict(NumpyArray input) {
+  private NumpyArray predict(NumpyArray input) {
     NumpyArray output = input;
     for (Layer layer : layerArray) {
+      output = layer.forward(output);
+    }
+    return output;
+  }
+  
+  public NumpyArray predictThreadSafe(double... input) {
+    return predictThreadSafe(NumpyArray.numpyArrayOf1DimArray(input));
+  }
+  public NumpyArray predictThreadSafe(NumpyArray input) {
+    // TODO: make a copy of the neuralnetwork to not interfere with other training threads
+    NumpyArray output = input;
+    for (Layer layer : layerArray) {
+      layer = layer.copy();
       output = layer.forward(output);
     }
     return output;
@@ -76,7 +89,6 @@ public class NeuralNetwork {
       grad = layer.backward(grad, learning_rate);
     }
     
-    error /= x_train.length;
     if (verbose)
       System.out.println("error=" + error);
   }

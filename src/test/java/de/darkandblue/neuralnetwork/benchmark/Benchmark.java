@@ -9,6 +9,7 @@ import de.darkandblue.neuralnetwork.math.NumpyArray;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 
 public class Benchmark {
   static final double[][][] trainingData = new double[][][] {
@@ -57,7 +58,7 @@ public class Benchmark {
       public void paint(Graphics graphics) {
         for (int x = 0; x < size; x++) {
           for (int y = 0; y < size; y++) {
-            NumpyArray predict = neuralNetwork.predict(
+            NumpyArray predict = neuralNetwork.predictThreadSafe(
               x / size,
               y / size
             );
@@ -90,10 +91,10 @@ public class Benchmark {
           
           time += System.nanoTime() - timeStamp;
           counter++;
-          double[] output = neuralNetwork.predict(inputs).transpose().data[0];
-          for (int i = 0; i < output.length; i++) {
-            error += Math.abs(targets[i] - output[i]);
-          }
+          double output = neuralNetwork.predict(inputs).transpose().data[0][0];
+          output = Math.min(output, 1);
+          output = Math.max(output, 0);
+          error += Math.abs(targets[0] - output);
         }
         if (error < 0.2)
           stop = true;
@@ -103,6 +104,8 @@ public class Benchmark {
       
       System.out.println("trained " + counter + " times");
       System.out.println("average train time " + timeTotal / counter + " ns");
-    }).start();
+    }).
+      
+      start();
   }
 }

@@ -1,5 +1,6 @@
 package de.darkandblue.neuralnetwork.layer.activation;
 
+import de.darkandblue.neuralnetwork.layer.Layer;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 public class SigmoidActivation extends Activation {
@@ -32,5 +33,10 @@ public class SigmoidActivation extends Activation {
     }
     
     return new NumpyArray(newData);
+  }
+  
+  @Override
+  public Layer copy() {
+    return new SigmoidActivation();
   }
 }

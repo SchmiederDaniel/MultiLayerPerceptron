@@ -18,6 +18,11 @@ public class SoftMax extends Layer {
     return output_gradient.multiplyScalar(activation_prime(output_gradient));
   }
   
+  @Override
+  public Layer copy() {
+    return new SoftMax();
+  }
+  
   public NumpyArray activation(NumpyArray input) {
     double[][] newData = new double[input.rows()][input.cols()];
     double sum = 0;

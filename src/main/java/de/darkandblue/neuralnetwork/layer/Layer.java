@@ -6,4 +6,6 @@ public abstract class Layer {
   public abstract NumpyArray forward(NumpyArray input);
   
   public abstract NumpyArray backward(NumpyArray output_gradient, double learning_rate);
+  
+  public abstract Layer copy();
 }
