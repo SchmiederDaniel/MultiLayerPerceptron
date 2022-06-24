@@ -2,12 +2,14 @@ package de.darkandblue.neuralnetwork;
 
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
-import de.darkandblue.neuralnetwork.lossfunction.MSE;
-import de.darkandblue.neuralnetwork.lossfunction.OwnLoss;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.IOException;
@@ -17,16 +19,41 @@ public class UpscaleAutoEncoder extends JFrame {
   public static void main(String[] args) throws IOException {
     new UpscaleAutoEncoder();
   }
+  double learningRate = 0;
   
   public UpscaleAutoEncoder() throws IOException {
     setDefaultCloseOperation(EXIT_ON_CLOSE);
+    setLayout(null);
+  
+    Scene scene = new Scene();
+    add(scene);
     
-    add(new Scene());
+    JSlider sliderLearningRate = new JSlider(0, 5000, 0);
+    sliderLearningRate.addChangeListener(e -> {
+      learningRate = sliderLearningRate.getValue() / (double) sliderLearningRate.getMaximum();
+      updateTitle();
+    });
+    add(sliderLearningRate);
     
-    setSize(1200, 600);
+    addComponentListener(new ComponentAdapter() {
+      @Override
+      public void componentResized(ComponentEvent e) {
+        super.componentResized(e);
+        scene.setSize(getWidth(), getWidth() / 3);
+        sliderLearningRate.setLocation(20, getWidth() / 3 + 20);
+        sliderLearningRate.setSize(getWidth() - 40, 120);
+      }
+    });
+    
+    setSize(1500, 700);
     setVisible(true);
     setLocationRelativeTo(null);
-    
+  
+    updateTitle();
+  }
+  
+  void updateTitle() {
+    setTitle("learningRate: " + learningRate);
   }
   
   class Scene extends JPanel {
@@ -34,7 +61,9 @@ public class UpscaleAutoEncoder extends JFrame {
     List<Integer> labelList;
     LossFunction lossFunction = new BinaryCrossEntropy();
     NeuralNetwork neuralNetwork = new NetworkBuilder()
-      .dense(7 * 7, 784)
+      .dense(7 * 7, 200)
+      .tanh()
+      .dense(200, 784)
       .sigmoid()
       .build();
     
@@ -74,7 +103,7 @@ public class UpscaleAutoEncoder extends JFrame {
       double[] x = pixelsToDouble(downScalePixels(pixels));
       double[] y = pixelsToDouble(pixels);
       
-      neuralNetwork.trainSingle(lossFunction, x, y, 0.5, false);
+      neuralNetwork.trainSingle(lossFunction, x, y, learningRate, false);
     }
     
     static double[] pixelsToDouble(int[] pixels) {
@@ -128,19 +157,25 @@ public class UpscaleAutoEncoder extends JFrame {
         lastImageChange = System.currentTimeMillis();
       }
       
+      int imageSize = getWidth() / 3;
+      
       int[] pixels = imageList.get(thinkIndex);
+      BufferedImage image = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
+      setPixels(pixels, image);
+      graphics.drawImage(image, 0, 0, imageSize, imageSize, null);
+      
       int[] lowResPixels = downScalePixels(pixels);
-      BufferedImage image = new BufferedImage(7, 7, BufferedImage.TYPE_INT_RGB);
+      image = new BufferedImage(7, 7, BufferedImage.TYPE_INT_RGB);
       setPixels(lowResPixels, image);
-      graphics.drawImage(image, 0, 0, getWidth() / 2, getHeight(), null);
+      graphics.drawImage(image, imageSize, 0, imageSize, imageSize, null);
       
       double[] x = pixelsToDouble(lowResPixels);
       
-      double[] y = neuralNetwork.predict(x).transpose().data[0];
+      double[] y = neuralNetwork.predictThreadSafe(x).transpose().data[0];
       int[] predictedPixels = doubleToPixels(y);
       image = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
       setPixels(predictedPixels, image);
-      graphics.drawImage(image, getWidth() / 2, 0, getWidth() / 2, getHeight(), null);
+      graphics.drawImage(image, imageSize * 2, 0, imageSize, imageSize, null);
     }
     
     static void setPixels(int[] pixels, BufferedImage image) {
