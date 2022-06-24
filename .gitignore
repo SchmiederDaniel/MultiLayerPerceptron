@@ -4,3 +4,4 @@ build.gradle
 build/
 /.idea/
 /gradle/
+/out/
