@@ -30,7 +30,7 @@ public class UpscaleAutoEncoder extends JFrame {
     
     JSlider sliderLearningRate = new JSlider(0, 5000, 0);
     sliderLearningRate.addChangeListener(e -> {
-      learningRate = sliderLearningRate.getValue() / (double) sliderLearningRate.getMaximum();
+      learningRate = sliderLearningRate.getValue() / (double) sliderLearningRate.getMaximum() * 5;
       updateTitle();
     });
     add(sliderLearningRate);
