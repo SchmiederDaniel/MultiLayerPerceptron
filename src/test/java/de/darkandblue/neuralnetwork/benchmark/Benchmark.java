@@ -9,7 +9,6 @@ import de.darkandblue.neuralnetwork.math.NumpyArray;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 
 public class Benchmark {
   static final double[][][] trainingData = new double[][][] {
@@ -87,7 +86,7 @@ public class Benchmark {
           double[] inputs = data[0];
           double[] targets = data[1];
           
-          neuralNetwork.trainSingle(LOSS_FUNCTION, inputs, targets, 0.001d, false);
+          neuralNetwork.trainSingle(LOSS_FUNCTION, inputs, targets, 0.0001d, false);
           
           time += System.nanoTime() - timeStamp;
           counter++;

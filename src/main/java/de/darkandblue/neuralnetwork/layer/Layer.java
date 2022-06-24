@@ -7,5 +7,5 @@ public abstract class Layer {
   
   public abstract NumpyArray backward(NumpyArray output_gradient, double learning_rate);
   
-  public abstract Layer copy();
+  public abstract Layer deepCopy();
 }

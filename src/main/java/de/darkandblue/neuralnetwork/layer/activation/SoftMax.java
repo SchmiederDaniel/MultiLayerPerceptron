@@ -19,7 +19,7 @@ public class SoftMax extends Layer {
   }
   
   @Override
-  public Layer copy() {
+  public Layer deepCopy() {
     return new SoftMax();
   }
   

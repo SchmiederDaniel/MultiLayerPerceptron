@@ -28,10 +28,9 @@ public class NeuralNetwork {
     return predictThreadSafe(NumpyArray.numpyArrayOf1DimArray(input));
   }
   public NumpyArray predictThreadSafe(NumpyArray input) {
-    // TODO: make a copy of the neuralnetwork to not interfere with other training threads
     NumpyArray output = input;
     for (Layer layer : layerArray) {
-      layer = layer.copy();
+      layer = layer.deepCopy();
       output = layer.forward(output);
     }
     return output;

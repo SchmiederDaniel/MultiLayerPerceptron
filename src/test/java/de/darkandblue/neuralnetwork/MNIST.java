@@ -80,7 +80,7 @@ public class MNIST extends JFrame {
       neuralNetwork.trainSingle(lossFunction, x, y, 0.1, false);
     }
     
-    static double[] pixelsToDouble(int[] pixels) {
+    double[] pixelsToDouble(int[] pixels) {
       double[] output = new double[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
         output[i] = pixels[i] / 255d;

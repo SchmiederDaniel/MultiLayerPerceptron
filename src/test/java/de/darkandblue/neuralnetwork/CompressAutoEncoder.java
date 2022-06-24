@@ -1,8 +1,11 @@
 package de.darkandblue.neuralnetwork;
 
+import de.darkandblue.neuralnetwork.layer.Layer;
+import de.darkandblue.neuralnetwork.lossfunction.BasicLoss;
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
-import de.darkandblue.neuralnetwork.lossfunction.BasicLoss;
+import de.darkandblue.neuralnetwork.lossfunction.MSE;
+import de.darkandblue.neuralnetwork.math.NumpyArray;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
 import javax.swing.*;
@@ -14,22 +17,23 @@ import java.awt.image.DataBufferInt;
 import java.io.IOException;
 import java.util.List;
 
-public class UpscaleAutoEncoder extends JFrame {
+public class CompressAutoEncoder extends JFrame {
   public static void main(String[] args) throws IOException {
-    new UpscaleAutoEncoder();
+    new CompressAutoEncoder();
   }
+  
   double learningRate = 0;
   
-  public UpscaleAutoEncoder() throws IOException {
+  public CompressAutoEncoder() throws IOException {
     setDefaultCloseOperation(EXIT_ON_CLOSE);
     setLayout(null);
-  
+    
     Scene scene = new Scene();
     add(scene);
     
     JSlider sliderLearningRate = new JSlider(0, 5000, 0);
     sliderLearningRate.addChangeListener(e -> {
-      learningRate = sliderLearningRate.getValue() / (double) sliderLearningRate.getMaximum() * 5;
+      learningRate = sliderLearningRate.getValue() / (double) sliderLearningRate.getMaximum();
       updateTitle();
     });
     add(sliderLearningRate);
@@ -47,7 +51,7 @@ public class UpscaleAutoEncoder extends JFrame {
     setSize(1500, 700);
     setVisible(true);
     setLocationRelativeTo(null);
-  
+    
     updateTitle();
   }
   
@@ -60,9 +64,18 @@ public class UpscaleAutoEncoder extends JFrame {
     List<Integer> labelList;
     LossFunction lossFunction = new BinaryCrossEntropy();
     NeuralNetwork neuralNetwork = new NetworkBuilder()
-      .dense(7 * 7, 784)
+      .dense(784, 30)
+      .sigmoid()
+      .dense(30, 7)
+      .sigmoid()
+      .dense(7, 30)
+      .sigmoid()
+      .dense(30, 784)
       .sigmoid()
       .build();
+    
+    // TODO: wouldn't it be usefull if the loss function of an image gets determined by how much a number looks like a number? 
+    // a algorithm would be usefull which compares the generated image and how it deviates from pixels near by from the original
     
     public Scene() throws IOException {
       imageList = MnistLoader.readImages();
@@ -97,10 +110,9 @@ public class UpscaleAutoEncoder extends JFrame {
       trainIndex %= 60000;
       
       int[] pixels = imageList.get(trainIndex);
-      double[] x = pixelsToDouble(downScalePixels(pixels));
-      double[] y = pixelsToDouble(pixels);
+      double[] x = pixelsToDouble(pixels);
       
-      neuralNetwork.trainSingle(lossFunction, x, y, learningRate, false);
+      neuralNetwork.trainSingle(lossFunction, x, x, learningRate, false);
     }
     
     double[] pixelsToDouble(int[] pixels) {
@@ -117,28 +129,6 @@ public class UpscaleAutoEncoder extends JFrame {
         output[i] = (int) (pixels[i] * 255d);
       }
       return output;
-    }
-    
-    int[] downScalePixels(int[] pixels) {
-      int[] resized = new int[7 * 7];
-      
-      for (int i = 0; i < pixels.length; i++) {
-        int x = i % 28;
-        int y = i / 28;
-        
-        x /= 4;
-        y /= 4;
-        int i2 = x + y * 7;
-        
-        resized[i2] += pixels[i];
-      }
-      
-      for (int i = 0; i < resized.length; i++) {
-        resized[i] = (int) (resized[i] / (4d * 4d));
-        resized[i] = Math.min(Math.max(resized[i], 0), 255);
-      }
-      
-      return resized;
     }
     
     int thinkIndex;
@@ -161,12 +151,18 @@ public class UpscaleAutoEncoder extends JFrame {
       setPixels(pixels, image);
       graphics.drawImage(image, 0, 0, imageSize, imageSize, null);
       
-      int[] lowResPixels = downScalePixels(pixels);
+      double[] x = pixelsToDouble(pixels);
+      
+      NumpyArray output = NumpyArray.numpyArrayOf1DimArray(x);
+      for (int i = 0; i < neuralNetwork.layerArray.length / 2; i++) {
+        Layer layer = neuralNetwork.layerArray[i].deepCopy();
+        output = layer.forward(output);
+      }
+      
+      int[] lowResPixels = doubleToPixels(output.transpose().data[0]);
       image = new BufferedImage(7, 7, BufferedImage.TYPE_INT_RGB);
       setPixels(lowResPixels, image);
       graphics.drawImage(image, imageSize, 0, imageSize, imageSize, null);
-      
-      double[] x = pixelsToDouble(lowResPixels);
       
       double[] y = neuralNetwork.predictThreadSafe(x).transpose().data[0];
       int[] predictedPixels = doubleToPixels(y);

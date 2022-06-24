@@ -21,8 +21,8 @@ public class NetworkBuilder {
     return this;
   }
   public NeuralNetwork build() {
-    
-    return new NeuralNetwork(layerList.toArray(Layer[]::new));
+    return new NeuralNetwork(layerList.toArray(new Layer[0]));
+//    return new NeuralNetwork(layerList.toArray(Layer[]::new));
   }
   
   @Override

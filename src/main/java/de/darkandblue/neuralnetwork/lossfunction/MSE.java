@@ -3,7 +3,7 @@ package de.darkandblue.neuralnetwork.lossfunction;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 public class MSE implements LossFunction {
-  
+  // Mean square error loss function
   @Override
   public double loss(NumpyArray y_true, NumpyArray y_pred) {
     if (y_true.rows() != y_pred.rows())

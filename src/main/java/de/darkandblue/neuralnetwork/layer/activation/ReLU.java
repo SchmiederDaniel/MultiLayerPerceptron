@@ -35,7 +35,7 @@ public class ReLU extends Activation {
   }
   
   @Override
-  public Layer copy() {
+  public Layer deepCopy() {
     return new ReLU();
   }
 }

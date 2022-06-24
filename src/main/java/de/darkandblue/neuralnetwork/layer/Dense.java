@@ -38,7 +38,7 @@ public class Dense extends Layer {
   }
   
   @Override
-  public Layer copy() {
+  public Layer deepCopy() {
     return new Dense(weights.copy(), bias.copy());
   }
 }

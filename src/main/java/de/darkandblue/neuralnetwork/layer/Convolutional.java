@@ -51,7 +51,7 @@ public class Convolutional extends Layer {
   }
   
   @Override
-  public Layer copy() {
+  public Layer deepCopy() {
     return null;
   }
 }

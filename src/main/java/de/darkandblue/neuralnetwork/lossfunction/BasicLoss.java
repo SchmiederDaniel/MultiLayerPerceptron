@@ -2,7 +2,8 @@ package de.darkandblue.neuralnetwork.lossfunction;
 
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
-public class OwnLoss implements LossFunction {
+public class BasicLoss implements LossFunction {
+  // basic loss function where the error is y_pred - y_true
   @Override
   public double loss(NumpyArray y_true, NumpyArray y_pred) {
     if (y_true.rows() != y_pred.rows())
@@ -32,7 +33,7 @@ public class OwnLoss implements LossFunction {
     
     for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
-        newData[rowIndex][colIndex] = y_pred.data[rowIndex][colIndex] - y_pred.data[rowIndex][colIndex];
+        newData[rowIndex][colIndex] = y_pred.data[rowIndex][colIndex] - y_true.data[rowIndex][colIndex];
       }
     }
     return new NumpyArray(newData);
