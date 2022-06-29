@@ -1,17 +1,15 @@
 package de.darkandblue.neuralnetwork;
 
 import de.darkandblue.neuralnetwork.lossfunction.BasicLoss;
-import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
-import de.darkandblue.neuralnetwork.lossfunction.MeanSquareError;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.io.IOException;
 import java.util.List;
+import java.util.Random;
 
 public class GanTest extends JFrame {
   public static void main(String[] args) throws IOException {
@@ -32,9 +30,10 @@ public class GanTest extends JFrame {
   class Scene extends JPanel {
     List<int[]> imageList;
     List<Integer> labelList;
+    int noiseCount = 64;
     
     GANetwork network = new GANBuilder()
-      .denseG(4, 200)
+      .denseG(noiseCount, 200)
       .sigmoidG()
       .denseG(200, 784)
       .sigmoidG()
@@ -44,8 +43,6 @@ public class GanTest extends JFrame {
       .sigmoidD()
       .build();
     // TODO print the loss functions of generator and discriminator to check why it isnt working
-    
-    LossFunction lossFunction = new BasicLoss();
     
     public Scene() throws IOException {
       imageList = MnistLoader.readImages();
@@ -82,9 +79,9 @@ public class GanTest extends JFrame {
       int[] pixels = imageList.get(trainIndex);
       double[] realArray = pixelsToDouble(pixels);
   
-      double[] noise = generateNoise(4);
+      double[] noise = generateNoise(noiseCount);
       
-      network.trainSingle(lossFunction, realArray, noise, 0.01d);
+      network.trainSingle(realArray, noise, 0.001d);
     }
     
     int predictIndex;
@@ -94,7 +91,12 @@ public class GanTest extends JFrame {
       if(predictIndex > imageList.size())
         predictIndex = 0;
       
-      double[] noise = generateNoise(4);
+//      double[] noise = generateNoise(noiseCount);
+      double[] noise = new double[noiseCount];
+      Random random = new Random();
+      for (int i = 0; i < noiseCount; i++) {
+        noise[i] = random.nextDouble(0, 1);
+      }
   
       double[] output = network.predictGeneratorThreadSafe(noise).transpose().data[0];
       int[] pixels = doubleToPixels(output);
@@ -112,15 +114,21 @@ public class GanTest extends JFrame {
     static double[] pixelsToDouble(int[] pixels) {
       double[] result = new double[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
-        result[i] = pixels[i] / 255d;
+//        result[i] = map(pixels[i], 0, 255d, -1d, 1d);
+        result[i] = map(pixels[i], 0, 255d, 0d, 1d);
       }
       return result;
+    }
+  
+    public static double map(double value, double minFrom, double maxFrom, double minTo, double maxTo) {
+      return (value - minFrom) / (maxFrom - minFrom) * (maxTo - minTo) + minTo;
     }
   
     static int[] doubleToPixels(double[] pixels) {
       int[] result = new int[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
-        result[i] = (int) (pixels[i] * 255d);
+//        result[i] = (int) map(pixels[i], -1, 1, 0, 255);
+        result[i] = (int) map(pixels[i], 0, 1, 0, 255);
       }
       return result;
     }

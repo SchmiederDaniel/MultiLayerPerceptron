@@ -108,6 +108,14 @@ public class NumpyArray {
     return "(" + rows() + ", " + cols() + ")";
   }
   
+  public static void main(String[] args) {
+    NumpyArray a = NumpyArray.valueOf(1);
+    NumpyArray b = NumpyArray.valueOf(1, 2);
+    
+    NumpyArray c = a.subtract(b);
+    
+    System.out.println("" + c);
+  }
   public NumpyArray subtract(NumpyArray other) {
     // determines if the subtraction needs to be reversed later on
     boolean reversed = !(rows() < other.rows());

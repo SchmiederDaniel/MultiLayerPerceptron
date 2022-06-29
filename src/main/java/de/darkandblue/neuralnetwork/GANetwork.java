@@ -36,42 +36,41 @@ public class GANetwork {
   }
   
   // Own train function
-  public void trainSingle(LossFunction lossFunction, double[] realArray, double[] noiseArray, double learning_rate) {
-    NumpyArray x = NumpyArray.valueOf(realArray);
-    trainDiscriminator(lossFunction, x, NumpyArray.valueOf(0), learning_rate);
-  
+  public void trainSingle(double[] realArray, double[] noiseArray, double learning_rate) {
+    NumpyArray real = NumpyArray.valueOf(realArray);
     NumpyArray z = NumpyArray.valueOf(noiseArray);
     
-    //forward
-    NumpyArray generated = predict(generatorLayers, z);
-    NumpyArray errorDiscriminator = trainDiscriminator(lossFunction, generated, NumpyArray.valueOf(1), learning_rate);
-  
+    // train Discriminator log(D(real)) + log(1 - D(G(z))
+    NumpyArray D_real = predict(discriminatorLayers, real);
+    NumpyArray log_D_real = log(D_real);
+    
+    NumpyArray D_G_z = predict(discriminatorLayers, predict(generatorLayers, z));
+    NumpyArray log_1_D_G_z = log(NumpyArray.valueOf(1).subtract(D_G_z));
+    
+    // multiply by -1 to get gradient ascent?
+    NumpyArray grad = log_D_real.add(log_1_D_G_z).multiplyScalar(-1);
     //backward
-    NumpyArray grad = lossFunction.loss_prime(NumpyArray.valueOf(0), errorDiscriminator);
-    for (int i = discriminatorLayers.length - 1; i >= 0; i--) {
-      Layer layer = discriminatorLayers[i];
-      grad = layer.backward(grad, learning_rate);
-    }
-  
-    grad = lossFunction.loss_prime(grad, generated).multiplyScalar(-1);
-    for (int i = generatorLayers.length - 1; i >= 0; i--) {
-      Layer layer = generatorLayers[i];
-      grad = layer.backward(grad, learning_rate);
-    }
-  }
-  
-  private NumpyArray trainDiscriminator(LossFunction lossFunction, NumpyArray input, NumpyArray target, double learning_rate) {
-    //forward
-    NumpyArray output = predict(discriminatorLayers, input);
-  
-    //backward
-    NumpyArray grad = lossFunction.loss_prime(target, output);
-  
     for (int j = discriminatorLayers.length - 1; j >= 0; j--) {
       Layer layer = discriminatorLayers[j];
       grad = layer.backward(grad, learning_rate);
     }
     
-    return output;
+    // train Generator log(1 - D(G(z)))
+    grad = log_1_D_G_z;
+    //backward
+    for (int j = generatorLayers.length - 1; j >= 0; j--) {
+      Layer layer = generatorLayers[j];
+      grad = layer.backward(grad, learning_rate);
+    }
+  }
+  
+  static NumpyArray log(NumpyArray numpyArray) {
+    double[][] newData = new double[numpyArray.rows()][numpyArray.cols()];
+    for (int rowIndex = 0; rowIndex < numpyArray.rows(); rowIndex++) {
+      for (int colIndex = 0; colIndex < numpyArray.cols(); colIndex++) {
+        newData[rowIndex][colIndex] = Math.log(numpyArray.data[rowIndex][colIndex]);
+      }
+    }
+    return new NumpyArray(newData);
   }
 }
