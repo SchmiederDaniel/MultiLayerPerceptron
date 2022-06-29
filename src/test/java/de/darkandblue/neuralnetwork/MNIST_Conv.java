@@ -1,6 +1,6 @@
 package de.darkandblue.neuralnetwork;
 
-import de.darkandblue.neuralnetwork.lossfunction.MSE;
+import de.darkandblue.neuralnetwork.lossfunction.MeanSquareError;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
@@ -27,7 +27,7 @@ public class MNIST_Conv extends JFrame {
   }
   
   class Scene extends JPanel {
-    MSE lossFunction = new MSE();
+    MeanSquareError lossFunction = new MeanSquareError();
     NeuralNetwork neuralNetwork = new NetworkBuilder()
       .dense(28 * 28, 40)
       .sigmoid()

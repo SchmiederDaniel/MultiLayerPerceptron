@@ -56,7 +56,7 @@ public class NumpyArray {
     return new NumpyArray(newData);
   }
   
-  public static NumpyArray numpyArrayOf1DimArray(double[] input) {
+  public static NumpyArray valueOf(double... input) {
     double[][] newData = new double[input.length][1];
     for (int index = 0; index < input.length; index++) {
       newData[index][0] = input[index];

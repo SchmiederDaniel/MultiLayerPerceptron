@@ -1,10 +1,8 @@
 package de.darkandblue.neuralnetwork;
 
 import de.darkandblue.neuralnetwork.layer.Layer;
-import de.darkandblue.neuralnetwork.lossfunction.BasicLoss;
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
-import de.darkandblue.neuralnetwork.lossfunction.MSE;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
@@ -153,7 +151,7 @@ public class CompressAutoEncoder extends JFrame {
       
       double[] x = pixelsToDouble(pixels);
       
-      NumpyArray output = NumpyArray.numpyArrayOf1DimArray(x);
+      NumpyArray output = NumpyArray.valueOf(x);
       for (int i = 0; i < neuralNetwork.layerArray.length / 2; i++) {
         Layer layer = neuralNetwork.layerArray[i].deepCopy();
         output = layer.forward(output);
