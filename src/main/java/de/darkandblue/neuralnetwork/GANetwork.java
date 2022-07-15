@@ -1,7 +1,7 @@
 package de.darkandblue.neuralnetwork;
 
 import de.darkandblue.neuralnetwork.layer.Layer;
-import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
+import de.darkandblue.neuralnetwork.lossfunction.BasicLoss;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 public class GANetwork {
@@ -23,7 +23,7 @@ public class GANetwork {
   }
   
   public NumpyArray predictGeneratorThreadSafe(double... input) {
-    return predictGeneratorThreadSafe(NumpyArray.valueOf(input));
+    return predictGeneratorThreadSafe(NumpyArray.of(input));
   }
   
   public NumpyArray predictGeneratorThreadSafe(NumpyArray input) {
@@ -35,20 +35,87 @@ public class GANetwork {
     return output;
   }
   
+  public NumpyArray predictDiscriminatorThreadSafe(double... input) {
+    return predictDiscriminatorThreadSafe(NumpyArray.of(input));
+  }
+  
+  public NumpyArray predictDiscriminatorThreadSafe(NumpyArray input) {
+    NumpyArray output = input;
+    for (Layer layer : discriminatorLayers) {
+      layer = layer.deepCopy();
+      output = layer.forward(output);
+    }
+    return output;
+  }
+  
+  public double[][] getGeneratorLoss(double[] noise, double[] targets) {
+    NumpyArray y = NumpyArray.of(targets);
+    NumpyArray x = predictGeneratorThreadSafe(noise);
+    
+//    return y.subtract(x).data;
+    return x.transpose().data;
+  }
+  
+  public double[][] getDiscriminatorLoss(double[] real, double[] targets) {
+    NumpyArray y = NumpyArray.of(targets);
+    NumpyArray a = predictDiscriminatorThreadSafe(real);
+    
+//    return y.subtract(a).data;
+    return a.transpose().data;
+  }
+  
+  public void trainOwnSingle(double[] realArray, double[] fakeArray, double[] noiseArray, double learning_rate) {
+    double[] targets = new double[] { 1 };
+    NumpyArray x = NumpyArray.of(fakeArray);
+    NumpyArray y = predict(discriminatorLayers, x);
+  
+    NumpyArray grad = new BasicLoss().loss_prime(NumpyArray.of(targets), y);
+    for (int j = discriminatorLayers.length - 1; j >= 0; j--) {
+      Layer layer = discriminatorLayers[j];
+      grad = layer.backward(grad, learning_rate);
+    }
+  
+    targets = new double[] { 0 };
+    x = NumpyArray.of(realArray);
+    y = predict(discriminatorLayers, x);
+    grad = new BasicLoss().loss_prime(NumpyArray.of(targets), y);
+    for (int j = discriminatorLayers.length - 1; j >= 0; j--) {
+      Layer layer = discriminatorLayers[j];
+      grad = layer.backward(grad, learning_rate);
+    }
+  
+    NumpyArray generatorPredict = predict(generatorLayers, NumpyArray.of(noiseArray));
+    
+    NumpyArray discriminatorPredict = predict(discriminatorLayers, generatorPredict);
+    
+    targets = new double[] { 1 };
+    grad = new BasicLoss().loss_prime(NumpyArray.of(targets), discriminatorPredict);
+    for (int j = discriminatorLayers.length - 1; j >= 0; j--) {
+      Layer layer = discriminatorLayers[j];
+      grad = layer.backward(grad, learning_rate);
+    }
+  
+    grad = grad.multiplyScalar(-1);
+    for (int j = generatorLayers.length - 1; j >= 0; j--) {
+      Layer layer = generatorLayers[j];
+      grad = layer.backward(grad, learning_rate * 3d);
+    }
+  }
+  
   // Own train function
   public void trainSingle(double[] realArray, double[] noiseArray, double learning_rate) {
-    NumpyArray real = NumpyArray.valueOf(realArray);
-    NumpyArray z = NumpyArray.valueOf(noiseArray);
+    NumpyArray x = NumpyArray.of(realArray);
+    NumpyArray z = NumpyArray.of(noiseArray);
     
-    // train Discriminator log(D(real)) + log(1 - D(G(z))
-    NumpyArray D_real = predict(discriminatorLayers, real);
-    NumpyArray log_D_real = log(D_real);
+    // train Discriminator log(D(x)) + log(1 - D(G(z))
+    NumpyArray D_x = predict(discriminatorLayers, x);
+    NumpyArray log_D_x = log(D_x);
     
     NumpyArray D_G_z = predict(discriminatorLayers, predict(generatorLayers, z));
-    NumpyArray log_1_D_G_z = log(NumpyArray.valueOf(1).subtract(D_G_z));
+    NumpyArray log_1_D_G_z = log(NumpyArray.of(1).subtract(D_G_z));
     
     // multiply by -1 to get gradient ascent?
-    NumpyArray grad = log_D_real.add(log_1_D_G_z).multiplyScalar(-1);
+    NumpyArray grad = NumpyArray.of(1).subtract(log_D_x.add(log_1_D_G_z)).multiplyScalar(-1);
     //backward
     for (int j = discriminatorLayers.length - 1; j >= 0; j--) {
       Layer layer = discriminatorLayers[j];
@@ -56,6 +123,7 @@ public class GANetwork {
     }
     
     // train Generator log(1 - D(G(z)))
+//    grad = NumpyArray.valueOf(1).subtract(log_1_D_G_z).multiplyScalar(-1);
     grad = log_1_D_G_z;
     //backward
     for (int j = generatorLayers.length - 1; j >= 0; j--) {

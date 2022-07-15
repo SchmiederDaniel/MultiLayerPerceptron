@@ -13,7 +13,7 @@ public class NeuralNetwork {
   }
   
   public NumpyArray predict(double... input) {
-    return predict(NumpyArray.valueOf(input));
+    return predict(NumpyArray.of(input));
   }
   
   private NumpyArray predict(NumpyArray input) {
@@ -26,7 +26,7 @@ public class NeuralNetwork {
   }
   
   public NumpyArray predictThreadSafe(double... input) {
-    return predictThreadSafe(NumpyArray.valueOf(input));
+    return predictThreadSafe(NumpyArray.of(input));
   }
   
   public NumpyArray predictThreadSafe(NumpyArray input) {
@@ -41,8 +41,8 @@ public class NeuralNetwork {
   // Own train function
   public void trainSingle(LossFunction lossFunction, double[] x_train, double[] y_train, double learning_rate, boolean verbose) {
     double error = 0;
-    NumpyArray x = NumpyArray.valueOf(x_train);
-    NumpyArray y = NumpyArray.valueOf(y_train);
+    NumpyArray x = NumpyArray.of(x_train);
+    NumpyArray y = NumpyArray.of(y_train);
     
     //forward
     NumpyArray output = predict(x);

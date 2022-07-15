@@ -151,7 +151,7 @@ public class CompressAutoEncoder extends JFrame {
       
       double[] x = pixelsToDouble(pixels);
       
-      NumpyArray output = NumpyArray.valueOf(x);
+      NumpyArray output = NumpyArray.of(x);
       for (int i = 0; i < neuralNetwork.layerArray.length / 2; i++) {
         Layer layer = neuralNetwork.layerArray[i].deepCopy();
         output = layer.forward(output);

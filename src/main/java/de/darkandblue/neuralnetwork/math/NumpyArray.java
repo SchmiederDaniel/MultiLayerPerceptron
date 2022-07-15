@@ -56,7 +56,7 @@ public class NumpyArray {
     return new NumpyArray(newData);
   }
   
-  public static NumpyArray valueOf(double... input) {
+  public static NumpyArray of(double... input) {
     double[][] newData = new double[input.length][1];
     for (int index = 0; index < input.length; index++) {
       newData[index][0] = input[index];
@@ -109,8 +109,8 @@ public class NumpyArray {
   }
   
   public static void main(String[] args) {
-    NumpyArray a = NumpyArray.valueOf(1);
-    NumpyArray b = NumpyArray.valueOf(1, 2);
+    NumpyArray a = NumpyArray.of(1);
+    NumpyArray b = NumpyArray.of(1, 2);
     
     NumpyArray c = a.subtract(b);
     
