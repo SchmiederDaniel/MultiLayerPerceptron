@@ -48,46 +48,35 @@ public class GANetwork {
     return output;
   }
   
-  public double getGeneratorLoss(double[] noise, double[] targets) {
+  public double[][] getGeneratorLoss(double[] noise, double[] targets) {
     NumpyArray y = NumpyArray.of(targets);
     NumpyArray x = predictGeneratorThreadSafe(noise);
     
-//    return .data;
-    return average(y.subtract(x).transpose().data);
+//    return y.subtract(x).data;
+    return x.transpose().data;
   }
   
-  double average(double[][] array) {
-    int count = 0;
-    double sum = 0;
-    for (double[] doubles : array) {
-      for (double aDouble : doubles) {
-        count++;
-        sum += Math.abs(aDouble);
-      }
-    }
-    return sum / count;
-  }
-  
-  public double getDiscriminatorLoss(double[] real, double[] targets) {
+  public double[][] getDiscriminatorLoss(double[] real, double[] targets) {
     NumpyArray y = NumpyArray.of(targets);
     NumpyArray a = predictDiscriminatorThreadSafe(real);
     
 //    return y.subtract(a).data;
-    return average(y.subtract(a).transpose().data);
+    return a.transpose().data;
   }
   
   public void trainOwnSingle(double[] realArray, double[] fakeArray, double[] noiseArray, double learning_rate) {
-    double[] targets = new double[] { 0 };
-    NumpyArray x = NumpyArray.of(realArray);
+    double[] targets = new double[] { 1 };
+    NumpyArray x = NumpyArray.of(fakeArray);
     NumpyArray y = predict(discriminatorLayers, x);
+  
     NumpyArray grad = new BasicLoss().loss_prime(NumpyArray.of(targets), y);
     for (int j = discriminatorLayers.length - 1; j >= 0; j--) {
       Layer layer = discriminatorLayers[j];
       grad = layer.backward(grad, learning_rate);
     }
   
-    targets = new double[] { 1 };
-    x = NumpyArray.of(fakeArray);
+    targets = new double[] { 0 };
+    x = NumpyArray.of(realArray);
     y = predict(discriminatorLayers, x);
     grad = new BasicLoss().loss_prime(NumpyArray.of(targets), y);
     for (int j = discriminatorLayers.length - 1; j >= 0; j--) {
@@ -96,6 +85,7 @@ public class GANetwork {
     }
   
     NumpyArray generatorPredict = predict(generatorLayers, NumpyArray.of(noiseArray));
+    
     NumpyArray discriminatorPredict = predict(discriminatorLayers, generatorPredict);
     
     targets = new double[] { 1 };
@@ -105,11 +95,10 @@ public class GANetwork {
       grad = layer.backward(grad, learning_rate);
     }
   
-//    grad = NumpyArray.of(1).subtract(grad);
     grad = grad.multiplyScalar(-1);
     for (int j = generatorLayers.length - 1; j >= 0; j--) {
       Layer layer = generatorLayers[j];
-      grad = layer.backward(grad, learning_rate * 3);
+      grad = layer.backward(grad, learning_rate * 3d);
     }
   }
   

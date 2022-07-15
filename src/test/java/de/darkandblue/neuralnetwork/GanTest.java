@@ -32,12 +32,12 @@ public class GanTest extends JFrame {
   class Scene extends JPanel {
     List<int[]> imageList;
     List<Integer> labelList;
-    int noiseCount = 4;
+    int noiseCount = 1;
     
     GANetwork network = new GANBuilder()
-      .denseG(noiseCount, 28 * 28)
+      .denseG(noiseCount, 4)
       .sigmoidG()
-      .denseD(28 * 28, 1)
+      .denseD(4, 1)
       .sigmoidD()
       .build();
     // TODO print the loss functions of generator and discriminator to check why it isnt working
@@ -70,7 +70,7 @@ public class GanTest extends JFrame {
       new Thread(() -> {
         while (true) {
           try {
-            Thread.sleep(32);
+            Thread.sleep(16);
           } catch (InterruptedException e) {
             throw new RuntimeException(e);
           }
@@ -81,17 +81,16 @@ public class GanTest extends JFrame {
     
     void test() {
       double[] noise = generateNoise(noiseCount);
-      int[] pixels = imageList.get(trainIndex);
-      double[] realArray = pixelsToDouble(pixels);
-      double generatorLoss = network.getGeneratorLoss(noise, realArray);
-      System.out.println("generator loss: " + generatorLoss);
+      double[] realArray = new double[] { high(), low(), low(), high() };
+      double[][] generatorLoss = network.getGeneratorLoss(noise, realArray);
+      System.out.println("generator loss: " + Arrays.deepToString(generatorLoss));
       
-      double discriminatorLoss = network.getDiscriminatorLoss(realArray, new double[] { 0 });
-      System.out.println("discriminator loss1: " + discriminatorLoss);
-      
-      double[] fakeArray = generateNoise(28 * 28, 1);
+      double[][] discriminatorLoss = network.getDiscriminatorLoss(realArray, new double[] { 0 });
+      System.out.println("discriminator loss1: " + Arrays.deepToString(discriminatorLoss));
+  
+      double[] fakeArray = new double[] { 0, 1, 1, 0 };
       discriminatorLoss = network.getDiscriminatorLoss(fakeArray, new double[] { 1 });
-      System.out.println("discriminator loss2: " + discriminatorLoss);
+      System.out.println("discriminator loss2: " + Arrays.deepToString(discriminatorLoss));
     }
     
     int trainIndex = 0;
@@ -100,15 +99,31 @@ public class GanTest extends JFrame {
       trainIndex++;
       if (trainIndex >= imageList.size())
         trainIndex = 0;
-      
-      int[] pixels = imageList.get(trainIndex);
-      double[] realArray = pixelsToDouble(pixels);
+
+//      int[] pixels = imageList.get(trainIndex);
+//      double[] realArray = pixelsToDouble(pixels);
 //  
       double[] noise = generateNoise(noiseCount);
       
-      network.trainOwnSingle(realArray, generateNoise(28 * 28), noise, 0.01d);
+      double[] realArray = new double[] { low(), high(), high(), low() };
+      double[] fakeArray = new double[] { high(), low(), low(), high() };
+  
+      network.trainOwnSingle(realArray, fakeArray, noise, 0.01d);
+      try {
+        Thread.sleep(1);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     }
-    
+  
+    double low() {
+      return ThreadLocalRandom.current().nextDouble(0, 0.2);
+    }
+  
+    double high() {
+      return ThreadLocalRandom.current().nextDouble(0.8, 1);
+    }
+  
     int predictIndex;
     
     public void paint(Graphics graphics) {
@@ -127,7 +142,7 @@ public class GanTest extends JFrame {
       double[] output = network.predictGeneratorThreadSafe(noise).transpose().data[0];
       int[] pixels = doubleToPixels(output);
       
-      BufferedImage bufferedImage = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
+      BufferedImage bufferedImage = new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB);
       for (int x = 0; x < bufferedImage.getWidth(); x++) {
         for (int y = 0; y < bufferedImage.getHeight(); y++) {
           int brightness = pixels[x + y * bufferedImage.getWidth()];
@@ -163,14 +178,6 @@ public class GanTest extends JFrame {
       double[] noise = new double[length];
       for (int i = 0; i < length; i++)
         noise[i] = ThreadLocalRandom.current().nextDouble(-1, 1);
-      return noise;
-    }
-    
-    static double[] generateNoise(int length, int seed) {
-      Random random = new Random(seed);
-      double[] noise = new double[length];
-      for (int i = 0; i < length; i++)
-        noise[i] = random.nextDouble(-1, 1);
       return noise;
     }
   }
