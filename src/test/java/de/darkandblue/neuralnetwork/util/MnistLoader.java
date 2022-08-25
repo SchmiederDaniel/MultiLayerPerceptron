@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MnistLoader {
-  public static List<Integer> readLabels() throws IOException {
+  public static List<Integer> readLabels() {
     List<Integer> labels = new CopyOnWriteArrayList<>();
     byte[] rawLabelBytes = readFileFromRessources("train-labels.idx1-ubyte");
     byte[] labelBytes = new byte[rawLabelBytes.length - 8];
@@ -22,7 +22,7 @@ public class MnistLoader {
     return labels;
   }
   
-  public static List<int[]> readImages() throws IOException {
+  public static List<int[]> readImages() {
     List<int[]> images = new ArrayList<>();
     byte[] rawImageBytes = readFileFromRessources("train-images.idx3-ubyte");
     byte[] imageBytes = new byte[rawImageBytes.length - 16];
@@ -39,11 +39,16 @@ public class MnistLoader {
     return images;
   }
   
-  public static byte[] readFileFromRessources(String fileName) throws IOException {
+  public static byte[] readFileFromRessources(String fileName) {
     DataInputStream imageInputStream = new DataInputStream(
       new BufferedInputStream(MnistLoader.class.getClassLoader().getResourceAsStream(fileName)));
-    byte[] rawBytes = imageInputStream.readAllBytes();
-    imageInputStream.close();
+    byte[] rawBytes;
+    try {
+      rawBytes = imageInputStream.readAllBytes();
+      imageInputStream.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
     return rawBytes;
   }
 }

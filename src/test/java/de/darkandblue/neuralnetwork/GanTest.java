@@ -1,7 +1,5 @@
 package de.darkandblue.neuralnetwork;
 
-import de.darkandblue.neuralnetwork.lossfunction.BasicLoss;
-import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
 import javax.swing.*;
@@ -87,7 +85,7 @@ public class GanTest extends JFrame {
       
       double[][] discriminatorLoss = network.getDiscriminatorLoss(realArray, new double[] { 0 });
       System.out.println("discriminator loss1: " + Arrays.deepToString(discriminatorLoss));
-  
+      
       double[] fakeArray = new double[] { 0, 1, 1, 0 };
       discriminatorLoss = network.getDiscriminatorLoss(fakeArray, new double[] { 1 });
       System.out.println("discriminator loss2: " + Arrays.deepToString(discriminatorLoss));
@@ -107,7 +105,7 @@ public class GanTest extends JFrame {
       
       double[] realArray = new double[] { low(), high(), high(), low() };
       double[] fakeArray = new double[] { high(), low(), low(), high() };
-  
+      
       network.trainOwnSingle(realArray, fakeArray, noise, 0.01d);
       try {
         Thread.sleep(1);
@@ -115,15 +113,15 @@ public class GanTest extends JFrame {
         throw new RuntimeException(e);
       }
     }
-  
+    
     double low() {
       return ThreadLocalRandom.current().nextDouble(0, 0.2);
     }
-  
+    
     double high() {
       return ThreadLocalRandom.current().nextDouble(0.8, 1);
     }
-  
+    
     int predictIndex;
     
     public void paint(Graphics graphics) {
