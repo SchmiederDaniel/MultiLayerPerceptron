@@ -22,7 +22,7 @@ public class Benchmark {
   
   public static void main(String[] args) {
     NeuralNetwork neuralNetwork = new NetworkBuilder()
-      .dense(
+      .layer.dense(
         new NumpyArray(
           new double[][] {
             { -0.5845703173805659, -0.33456588808097765 },
@@ -34,8 +34,8 @@ public class Benchmark {
           { -0.17983837701559668 }
         })
       )
-      .sigmoid()
-      .dense(
+      .activation.sigmoid()
+      .layer.dense(
         new NumpyArray(
           new double[][] {
             { 0.8797307775638197, 0.8943898353263877 },
@@ -45,7 +45,7 @@ public class Benchmark {
           { 0.9274095940464153 }
         })
       )
-      .sigmoid()
+      .activation.sigmoid()
       .build();
     
     JFrame frame = new JFrame();
@@ -90,7 +90,7 @@ public class Benchmark {
           
           time += System.nanoTime() - timeStamp;
           counter++;
-          double output = neuralNetwork.predict(inputs).transpose().data[0][0];
+          double output = neuralNetwork.predict(NumpyArray.of(inputs)).transpose().data[0][0];
           output = Math.min(output, 1);
           output = Math.max(output, 0);
           error += Math.abs(targets[0] - output);

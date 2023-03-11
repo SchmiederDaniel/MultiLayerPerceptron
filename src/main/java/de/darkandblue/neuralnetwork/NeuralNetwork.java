@@ -4,24 +4,31 @@ import de.darkandblue.neuralnetwork.layer.Layer;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+
 public class NeuralNetwork {
   //  List<Layer> layerList;
-  Layer[] layerArray;
+  public Layer[] layerArray;
   
   public NeuralNetwork(Layer[] layerArray) {
     this.layerArray = layerArray;
   }
   
+  /*
+  Should only be used for training and can cause problems when used asynchron
+   */
+  @Deprecated
   public NumpyArray predict(double... input) {
     return predict(NumpyArray.of(input));
   }
   
-  private NumpyArray predict(NumpyArray input) {
+  public NumpyArray predict(NumpyArray input) {
     NumpyArray output = input;
     for (Layer layer : layerArray) {
       output = layer.forward(output);
     }
-    
     return output;
   }
   
@@ -36,6 +43,19 @@ public class NeuralNetwork {
       output = layer.forward(output);
     }
     return output;
+  }
+  
+  public NumpyArray backwardWithoutTrain(LossFunction lossFunction, NumpyArray output, NumpyArray y, double learning_rate) {
+    NumpyArray grad = lossFunction.loss_prime(y, output);
+    for (int j = layerArray.length - 1; j >= 0; j--) {
+      Layer layer = layerArray[j].deepCopy();
+      grad = layer.backward(grad, learning_rate);
+    }
+    return grad;
+  }
+  
+  public void trainSingle(LossFunction lossFunction, double[] x_train, double[] y_train, double learning_rate) {
+    trainSingle(lossFunction, x_train, y_train, learning_rate, false);
   }
   
   // Own train function
@@ -61,5 +81,31 @@ public class NeuralNetwork {
     
     if (verbose)
       System.out.println("error=" + error);
+  }
+  
+  public NumpyArray trainWithoutPredict(LossFunction lossFunction, NumpyArray output, NumpyArray y, double learning_rate) {
+    NumpyArray grad = lossFunction.loss_prime(y, output);
+    for (int j = layerArray.length - 1; j >= 0; j--) {
+      Layer layer = layerArray[j];
+      grad = layer.backward(grad, learning_rate);
+    }
+    return grad;
+  }
+  
+  public NumpyArray trainWithoutPredict(LossFunction lossFunction, NumpyArray output, double[] y_train, double learning_rate) {
+    NumpyArray y = NumpyArray.of(y_train);
+    return trainWithoutPredict(lossFunction, output, y, learning_rate);
+  }
+  
+  public NeuralNetwork copyMerge(NeuralNetwork neuralNetwork) {
+    throw new RuntimeException("not implemented yet L");
+  }
+  
+  public NeuralNetwork copyMutate(double from, double to) {
+    throw new RuntimeException("not implemented yet L");
+  }
+  
+  public NeuralNetwork copy() {
+    throw new RuntimeException("not implemented yet L");
   }
 }

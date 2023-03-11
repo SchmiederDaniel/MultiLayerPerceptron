@@ -2,7 +2,6 @@ package de.darkandblue.neuralnetwork;
 
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
-import de.darkandblue.neuralnetwork.lossfunction.BasicLoss;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
 import javax.swing.*;
@@ -60,8 +59,8 @@ public class UpscaleAutoEncoder extends JFrame {
     List<Integer> labelList;
     LossFunction lossFunction = new BinaryCrossEntropy();
     NeuralNetwork neuralNetwork = new NetworkBuilder()
-      .dense(7 * 7, 784)
-      .sigmoid()
+      .layer.dense(7 * 7, 784)
+      .activation.sigmoid()
       .build();
     
     public Scene() throws IOException {

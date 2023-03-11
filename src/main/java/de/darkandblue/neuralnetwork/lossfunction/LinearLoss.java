@@ -2,8 +2,8 @@ package de.darkandblue.neuralnetwork.lossfunction;
 
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
-public class BinaryCrossEntropy implements LossFunction {
-  
+public class LinearLoss implements LossFunction {
+  // basic loss function where the error is y_pred - y_true
   @Override
   public double loss(NumpyArray y_true, NumpyArray y_pred) {
     if (y_true.rows() != y_pred.rows())
@@ -14,11 +14,12 @@ public class BinaryCrossEntropy implements LossFunction {
     double sum = 0;
     for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
-        sum += -y_true.data[rowIndex][colIndex] * Math.log(y_pred.data[rowIndex][colIndex])
-          - (1 - y_true.data[rowIndex][colIndex]) * Math.log(1 - y_pred.data[rowIndex][colIndex]);
+        sum += Math.abs(y_pred.data[rowIndex][colIndex] - y_true.data[rowIndex][colIndex]);
       }
     }
     return sum / (y_true.rows() * y_pred.cols());
+
+//    return 2 * (y_pred - y_true) / np.size(y_true)
   }
   
   @Override
@@ -29,12 +30,13 @@ public class BinaryCrossEntropy implements LossFunction {
       throw new IllegalArgumentException("Cols doesn't match " + y_true.cols() + ", " + y_pred.cols());
     
     double[][] newData = new double[y_true.rows()][y_pred.cols()];
+    
     for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
-        newData[rowIndex][colIndex] = ((1d - y_true.data[rowIndex][colIndex]) / (1d - y_pred.data[rowIndex][colIndex])
-          - y_true.data[rowIndex][colIndex] / y_pred.data[rowIndex][colIndex]) / (y_true.rows() * y_true.cols());
+        newData[rowIndex][colIndex] = y_pred.data[rowIndex][colIndex] - y_true.data[rowIndex][colIndex];
       }
     }
     return new NumpyArray(newData);
+//    return 2 * (y_pred - y_true) / np.size(y_true)
   }
 }

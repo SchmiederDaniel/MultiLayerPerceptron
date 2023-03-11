@@ -29,10 +29,10 @@ public class MNIST_Conv extends JFrame {
   class Scene extends JPanel {
     MeanSquareError lossFunction = new MeanSquareError();
     NeuralNetwork neuralNetwork = new NetworkBuilder()
-      .dense(28 * 28, 40)
-      .sigmoid()
-      .dense(40, 10)
-      .sigmoid()
+      .layer.dense(28 * 28, 40)
+      .activation.sigmoid()
+      .layer.dense(40, 10)
+      .activation.sigmoid()
       .build();
     List<int[]> imageList;
     List<Integer> labelList;

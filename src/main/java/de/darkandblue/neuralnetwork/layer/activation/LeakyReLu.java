@@ -3,13 +3,7 @@ package de.darkandblue.neuralnetwork.layer.activation;
 import de.darkandblue.neuralnetwork.layer.Layer;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
-public class SigmoidActivation extends Activation {
-  public SigmoidActivation(NumpyArray copyInput) {
-    super(copyInput);
-  }
-  
-  public SigmoidActivation() {
-  }
+public class LeakyReLu extends Activation {
   
   @Override
   public NumpyArray activation(NumpyArray input) {
@@ -17,15 +11,15 @@ public class SigmoidActivation extends Activation {
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
-        newData[rowIndex][colIndex] = sigmoid(input.data[rowIndex][colIndex]);
+        double x = input.data[rowIndex][colIndex];
+        if (x > 0)
+          newData[rowIndex][colIndex] = x;
+        else
+          newData[rowIndex][colIndex] = x * 0.01d;
       }
     }
     
     return new NumpyArray(newData);
-  }
-  
-  private static double sigmoid(double x) {
-    return 1d / (1d + Math.exp(-x));
   }
   
   @Override
@@ -34,8 +28,11 @@ public class SigmoidActivation extends Activation {
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
-        double s = sigmoid(input.data[rowIndex][colIndex]);
-        newData[rowIndex][colIndex] = s * (1 - s);
+        double x = input.data[rowIndex][colIndex];
+        if (x > 0)
+          newData[rowIndex][colIndex] = 1;
+        else
+          newData[rowIndex][colIndex] = x / 0.01d;
       }
     }
     
@@ -44,11 +41,6 @@ public class SigmoidActivation extends Activation {
   
   @Override
   public Layer deepCopy() {
-    return new SigmoidActivation(this.input.copy());
-  }
-  
-  @Override
-  public String toString() {
-    return "SigmoidActivation";
+    return new LeakyReLu();
   }
 }

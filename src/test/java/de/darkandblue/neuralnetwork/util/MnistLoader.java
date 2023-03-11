@@ -39,6 +39,37 @@ public class MnistLoader {
     return images;
   }
   
+  public static List<int[]> readTestImages() {
+    List<int[]> images = new ArrayList<>();
+    byte[] rawImageBytes = readFileFromRessources("testimages.ubyte");
+    byte[] imageBytes = new byte[rawImageBytes.length - 16];
+    System.arraycopy(rawImageBytes, 16, imageBytes, 0, imageBytes.length);
+    
+    for (int currentImage = 0; currentImage < 10000; currentImage++) {
+      int[] image = new int[28 * 28];
+      for (int pixelIndex = 0; pixelIndex < image.length; pixelIndex++) {
+        int unsigned = imageBytes[currentImage * 28 * 28 + pixelIndex] & 0xff;
+        image[pixelIndex] = unsigned;
+      }
+      images.add(image);
+    }
+    return images;
+  }
+  
+  public static List<Integer> readTestLabels() {
+    List<Integer> labels = new CopyOnWriteArrayList<>();
+    byte[] rawLabelBytes = readFileFromRessources("testlabels.ubyte");
+    byte[] labelBytes = new byte[rawLabelBytes.length - 8];
+    System.arraycopy(rawLabelBytes, 8, labelBytes, 0, labelBytes.length);
+    
+    for (int currentImage = 0; currentImage < 10000; currentImage++) {
+      int unsigned = labelBytes[currentImage] & 0xff;
+      labels.add(unsigned);
+    }
+    
+    return labels;
+  }
+  
   public static byte[] readFileFromRessources(String fileName) {
     DataInputStream imageInputStream = new DataInputStream(
       new BufferedInputStream(MnistLoader.class.getClassLoader().getResourceAsStream(fileName)));

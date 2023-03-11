@@ -15,7 +15,7 @@ public class NumpyArray {
   }
   
   /*
-  Array is a implementation of the behavior of Numpy.array()
+  Array is an implementation of the behavior of Numpy.array()
    */
   public int rows() { // Zeile
     return data.length;
@@ -108,14 +108,6 @@ public class NumpyArray {
     return "(" + rows() + ", " + cols() + ")";
   }
   
-  public static void main(String[] args) {
-    NumpyArray a = NumpyArray.of(1);
-    NumpyArray b = NumpyArray.of(1, 2);
-    
-    NumpyArray c = a.subtract(b);
-    
-    System.out.println("" + c);
-  }
   public NumpyArray subtract(NumpyArray other) {
     // determines if the subtraction needs to be reversed later on
     boolean reversed = !(rows() < other.rows());
@@ -184,6 +176,16 @@ public class NumpyArray {
     for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < cols(); colIndex++) {
         newData[rowIndex][colIndex] = data[rowIndex][colIndex] * other;
+      }
+    }
+    return new NumpyArray(newData);
+  }
+  
+  public NumpyArray subtractScalar(double other) {
+    double[][] newData = new double[rows()][cols()];
+    for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
+      for (int colIndex = 0; colIndex < cols(); colIndex++) {
+        newData[rowIndex][colIndex] = data[rowIndex][colIndex] - other;
       }
     }
     return new NumpyArray(newData);

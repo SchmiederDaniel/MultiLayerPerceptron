@@ -6,6 +6,13 @@ import de.darkandblue.neuralnetwork.math.NumpyArray;
 public abstract class Activation extends Layer {
   NumpyArray input;
   
+  public Activation(NumpyArray copyInput) {
+    this.input = copyInput;
+  }
+  
+  public Activation() {
+  }
+  
   @Override
   public NumpyArray forward(NumpyArray input) {
     this.input = input;

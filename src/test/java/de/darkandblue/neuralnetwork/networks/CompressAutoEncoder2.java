@@ -1,5 +1,8 @@
-package de.darkandblue.neuralnetwork;
+package de.darkandblue.neuralnetwork.networks;
 
+import de.darkandblue.neuralnetwork.NetworkBuilder;
+import de.darkandblue.neuralnetwork.NeuralNetwork;
+import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LinearLoss;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
@@ -13,14 +16,14 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.util.List;
 
-public class CompressAutoEncoder extends JFrame {
+public class CompressAutoEncoder2 extends JFrame {
   public static void main(String[] args) {
-    new CompressAutoEncoder();
+    new CompressAutoEncoder2();
   }
   
   double learningRate = 0.025;
   
-  public CompressAutoEncoder() {
+  public CompressAutoEncoder2() {
     setDefaultCloseOperation(EXIT_ON_CLOSE);
     setLayout(null);
     
@@ -63,11 +66,11 @@ public class CompressAutoEncoder extends JFrame {
       .activation.sigmoid()
       .layer.dense(80, 80)
       .activation.sigmoid()
-      .layer.dense(80, 1)
+      .layer.dense(80, 80)
       .activation.sigmoid()
       .build();
     NeuralNetwork neuralNetworkDecoder = new NetworkBuilder()
-      .layer.dense(1, 80)
+      .layer.dense(80, 80)
       .activation.sigmoid()
       .layer.dense(80, 80)
       .activation.sigmoid()
@@ -106,6 +109,11 @@ public class CompressAutoEncoder extends JFrame {
       }).start();
   
       new Thread(() -> {
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
         while (true) {
           test();
         }
@@ -190,11 +198,6 @@ public class CompressAutoEncoder extends JFrame {
       
       double[] inputs = pixelsToDouble(pixels);
       NumpyArray x = neuralNetworkEncoder.predictThreadSafe(inputs);
-      
-      int[] lowResPixels = doubleToPixels(x.transpose().data[0]);
-      image = new BufferedImage(7, 7, BufferedImage.TYPE_INT_RGB);
-      setPixels(lowResPixels, image);
-      graphics.drawImage(image, imageSize, 0, imageSize, imageSize, null);
       
       double[] y = neuralNetworkDecoder.predictThreadSafe(x).transpose().data[0];
       int[] predictedPixels = doubleToPixels(y);
