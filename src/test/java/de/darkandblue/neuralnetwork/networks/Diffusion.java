@@ -2,22 +2,18 @@ package de.darkandblue.neuralnetwork.networks;
 
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
-import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LinearLoss;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
-import de.darkandblue.neuralnetwork.lossfunction.MeanSquareError;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.List;
+import java.io.File;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -54,7 +50,7 @@ public class Diffusion extends JFrame {
       public void componentResized(ComponentEvent e) {
         label.setLocation(0, getHeight() - 150);
         sliderViewSteps.setLocation(0, getHeight() - 100);
-        sliderViewSteps.setSize(getWidth(), 50);
+        sliderViewSteps.setSize(getWidth() - 20, 50);
         scene.setSize(getWidth() - 4, getHeight() - 150);
         label.setSize(getWidth(), 50);
       }
@@ -100,8 +96,8 @@ public class Diffusion extends JFrame {
     int[][] images;
     int[] labels;
     LossFunction lossFunction = new LinearLoss();
-    double learningRate = 0.05;
-    private static final int MAX_STEP_SIZE = 500;
+    double learningRate = 0.03;
+    private static final int MAX_STEP_SIZE = 1000;
     
     public Scene() {
       images = MnistLoader.readImages().stream().toArray(int[][]::new);
@@ -111,51 +107,18 @@ public class Diffusion extends JFrame {
       labels = MnistLoader.readLabels().stream().mapToInt(i -> i).toArray();
       
       neuralNetwork = new NetworkBuilder()
-        .layer.dense(imageResolution * imageResolution + MAX_STEP_SIZE, 300)
+        .layer.dense(imageResolution * imageResolution + 2, 120)
         .activation.sigmoid()
-        .layer.dense(300, 150)
+        .layer.dense(120, 80)
         .activation.sigmoid()
-        .layer.dense(150, 300)
+        .layer.dense(80, 120)
         .activation.sigmoid()
-        .layer.dense(300, imageResolution * imageResolution)
+        .layer.dense(120, imageResolution * imageResolution)
         .activation.sigmoid()
         .build();
     }
     
     int trainIndex;
-    
-    void test() {
-      JFrame frame = new JFrame() {
-        int index = MAX_STEP_SIZE;
-        
-        public void paint(Graphics graphics) {
-          index++;
-          
-          double index = this.index % 2 == 0 ? MAX_STEP_SIZE : MAX_STEP_SIZE - 1;
-          
-          int[] pixels = images[0];
-          double[] realData = pixelsToDouble(pixels);
-          
-          double[] noisy = addNoise(0, realData, index / (double) MAX_STEP_SIZE);
-          int[] decodedPixels = doubleToPixels(noisy);
-          drawPixels(graphics, decodedPixels, 0, 0, getWidth(), getHeight());
-        }
-      };
-      
-      new Thread(() -> {
-        while (true) {
-          try {
-            Thread.sleep(250);
-          } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-          }
-          frame.repaint();
-        }
-      }).start();
-      frame.setSize(500, 500);
-      frame.setVisible(true);
-      frame.setLocationRelativeTo(null);
-    }
     
     public void train() {
       trainIndex++;
@@ -167,15 +130,39 @@ public class Diffusion extends JFrame {
 //      int label = labels[trainIndex];
       double[] realData = pixelsToDouble(pixels);
       
-      double[] noisy = addNoise(trainIndex, realData, i / (double) MAX_STEP_SIZE);
-      double[] lessNoisy = addNoise(trainIndex, realData, (i - 1) / (double) MAX_STEP_SIZE);
+      double[] noisy = addNoise(trainIndex, realData, (double) i / MAX_STEP_SIZE);
+      double[] lessNoisy = addNoise(trainIndex, realData, (double) (i - 1) / MAX_STEP_SIZE);
       double[] diffrence = subtract(noisy, lessNoisy);
       diffrence = multiply(diffrence, MAX_STEP_SIZE);
       diffrence = add(diffrence, 0.5);
       
-      double[] stepIndicator = new double[MAX_STEP_SIZE];
-      stepIndicator[i] = 1;
-      noisy = addValuesToArray(noisy, stepIndicator);
+//      if (i <= 5) {
+//        int[] noisyPixels = doubleToPixels(noisy);
+//        BufferedImage bufferedImage = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
+//        for (int x = 0; x < 28; x++) {
+//          for (int y = 0; y < 28; y++) {
+//            int index = x + y * 28;
+//            int brightness = noisyPixels[index];
+//            Color color = new Color(brightness, brightness, brightness);
+//            bufferedImage.setRGB(x, y, color.getRGB());
+//          }
+//        }
+//        JFrame frame = new JFrame() {
+//          @Override
+//          public void paint(Graphics graphics) {
+//            graphics.drawImage(bufferedImage, 0, 0, getWidth(), getHeight(), null);
+//          }
+//        };
+//        frame.setVisible(true);
+//        frame.setSize(800, 800);
+//        try {
+//          Thread.sleep(10000);
+//        } catch (InterruptedException e) {
+//          throw new RuntimeException(e);
+//        }
+//      }
+      
+      noisy = addValuesToArray(noisy, i / (double) MAX_STEP_SIZE);
       
       neuralNetwork.trainSingle(lossFunction, noisy, diffrence, learningRate);
     }
@@ -189,7 +176,6 @@ public class Diffusion extends JFrame {
         double diffrence = random.nextDouble() - value;
         output[i] = value + diffrence * strength;
       }
-      
       return output;
     }
     
@@ -206,17 +192,17 @@ public class Diffusion extends JFrame {
     }
     
     public void paint(Graphics graphics) {
-      setTitle("training steps: " + trainIndex + " learning rate: " + learningRate + " diffusion step size: " + MAX_STEP_SIZE);
       super.paint(graphics);
       if (thinkIndex == 0)
         return;
       
       int[] pixels = images[thinkIndex];
+//      int label = labels[thinkIndex];
+      setTitle("training steps: " + trainIndex + " learning rate: " + learningRate + " diffusion step size: " + MAX_STEP_SIZE);
       double[] input = pixelsToDouble(pixels);
       double[] noisy = addNoise(thinkIndex, input, (double) sliderViewSteps.getValue() / MAX_STEP_SIZE);
       
       int[] decodedPixels = doubleToPixels(noisy);
-      //int i = MAX_STEP_SIZE / devideStrength - 1; if(; i >= 0; i--)
       drawPixels(graphics, decodedPixels, 0, getHeight() / 5 * 4, getWidth() / 5, getHeight() / 5);
       decodedPixels = doubleToPixels(input);
       drawPixels(graphics, decodedPixels, getHeight() / 5, getHeight() / 5 * 4, getWidth() / 5, getHeight() / 5);
@@ -227,15 +213,13 @@ public class Diffusion extends JFrame {
       double imageCounter = 0;
       int counter = 0;
       for (int i = 0; i < sliderViewSteps.getValue(); i++) {
-        double[] stepIndicator = new double[MAX_STEP_SIZE];
-        stepIndicator[sliderViewSteps.getValue() - i] = 1;
-        double[] nextInput = addValuesToArray(noisy, stepIndicator);
+        double[] nextInput = addValuesToArray(noisy, (double) i / MAX_STEP_SIZE);
         double[] output = neuralNetwork.predictThreadSafe(nextInput).transpose().data[0];
         output = subtract(output, 0.5);
         output = devide(output, MAX_STEP_SIZE);
         noisy = subtract(noisy, output);
-  
-        if(((double) i / sliderViewSteps.getValue() * 20d) - imageCounter > 1 || i == sliderViewSteps.getValue() - 1) {
+        
+        if (((double) i / sliderViewSteps.getValue() * 20d) - imageCounter > 1 || i == sliderViewSteps.getValue() - 1) {
           decodedPixels = doubleToPixels(noisy);
           int x = counter % 5;
           int y = counter / 5;
