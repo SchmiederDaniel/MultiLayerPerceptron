@@ -32,6 +32,7 @@ public class Diffusion extends JFrame {
   Scene scene;
   JSlider sliderViewSteps = new JSlider(1, Scene.MAX_STEP_SIZE - 1, Scene.MAX_STEP_SIZE / 2);
   JSlider sliderLearningRate = new JSlider(0, 100000, (int) (Scene.learningRate * 100000));
+  JSlider sliderStepSize = new JSlider(1, Scene.MAX_STEP_VARIANCE, Scene.thinkStepSize);
   
   public Diffusion() {
     setLayout(null);
@@ -54,10 +55,18 @@ public class Diffusion extends JFrame {
       labelLR.setText("LearningRate: " + Math.round(Scene.learningRate * 100d) / 100d);
     });
     
+    JLabel labelStepSize = new JLabel("Stepsize: " + Scene.thinkStepSize);
+    add(labelStepSize);
+    add(sliderStepSize);
+    sliderStepSize.addChangeListener(e -> {
+      Scene.thinkStepSize = sliderStepSize.getValue();
+      labelStepSize.setText("Stepsize: " + Scene.thinkStepSize);
+    });
+    
     addComponentListener(new ComponentAdapter() {
       public void componentResized(ComponentEvent e) {
         labelNoise.setSize(getWidth(), 20);
-        labelNoise.setLocation(10, getHeight() - 150);
+        labelNoise.setLocation(10, getHeight() - 200);
         
         sliderViewSteps.setSize(getWidth() - 20, 30);
         sliderViewSteps.setLocation(0, labelNoise.getY() + labelNoise.getHeight());
@@ -68,11 +77,17 @@ public class Diffusion extends JFrame {
         sliderLearningRate.setSize(getWidth() - 20, 30);
         sliderLearningRate.setLocation(0, labelLR.getY() + labelLR.getHeight());
         
+        labelStepSize.setSize(getWidth(), 20);
+        labelStepSize.setLocation(10, sliderLearningRate.getY() + sliderLearningRate.getHeight());
+        
+        sliderStepSize.setSize(getWidth() - 20, 30);
+        sliderStepSize.setLocation(0, labelStepSize.getY() + labelStepSize.getHeight());
+        
         scene.setSize(getWidth() - 4, getWidth());
       }
     });
     
-    setSize(800, 950);
+    setSize(800, 1010);
     setVisible(true);
     setLocationRelativeTo(null);
     
@@ -112,17 +127,22 @@ public class Diffusion extends JFrame {
     int[][] testImages;
     int[] labels;
     int[] testLabels;
+    static final int MAX_STEP_VARIANCE = 4;
     
-    static double learningRate = 0.05;
+    static double learningRate = 0.15;
     LossFunction lossFunction = new LinearLoss();
     NeuralNetwork neuralNetwork = new NetworkBuilder()
-      .layer.dense(imageResolution * imageResolution, 120)
+      .layer.dense(imageResolution * imageResolution + MAX_STEP_VARIANCE + 10, 80)
       .activation.sigmoid()
-      .layer.dense(120, imageResolution * imageResolution)
+      .layer.dense(80, 80)
+      .activation.sigmoid()
+      .layer.dense(80, imageResolution * imageResolution)
       .activation.sigmoid()
       .build();
-    private static final int MAX_STEP_SIZE = 800;
-    double thinkStepSize = 1d; // 0.5d = best
+    double speedUp = 2d;
+    private static final int MAX_STEP_SIZE = 200;
+    
+    static int thinkStepSize = 1;
     
     public Scene() {
       images = MnistLoader.readImages().stream().toArray(int[][]::new);
@@ -146,17 +166,28 @@ public class Diffusion extends JFrame {
       int[] pixels = images[trainIndex];
 //      int label = labels[trainIndex];
       double[] realData = pixelsToDouble(pixels);
+      int stepSize = ThreadLocalRandom.current().nextInt(0, MAX_STEP_VARIANCE);
       
       double[] input = addNoise(trainIndex, realData, (double) i / MAX_STEP_SIZE);
-      double[] target = addNoise(trainIndex, realData, (i - 1d) / MAX_STEP_SIZE);
+      double[] target = addNoise(trainIndex, realData, (i - stepSize * speedUp) / MAX_STEP_SIZE);
       target = subtract(input, target);
-      target = multiply(target, MAX_STEP_SIZE * 2d); // TODO: find out why do I need to multiply by 2 instead of deviding (usally it should take more space for -1 and +1 values inside 0-1)
+      target = multiply(target, MAX_STEP_SIZE / speedUp);
       target = add(target, 0.5);
+      
+      double[] stepSizeIndicator = new double[MAX_STEP_VARIANCE];
+      stepSizeIndicator[stepSize] = 1;
+      input = addValuesToArray(input, stepSizeIndicator);
+      
+      double[] states = new double[10];
+      int state = (int) (i / (double) MAX_STEP_SIZE * 10d);
+      states[state] = 1;
+      input = addValuesToArray(input, states);
       
       neuralNetwork.trainSingle(lossFunction, input, target, learningRate);
     }
     
     static double[] addNoise(int seed, double[] array, double strength) {
+      strength = Math.max(Math.min(strength, 1), 0);
       double[] output = new double[array.length];
       Random random = new Random(seed);
       
@@ -191,19 +222,30 @@ public class Diffusion extends JFrame {
       decodedPixels = doubleToPixels(input);
       drawPixels(graphics, decodedPixels, getHeight() / 5, getHeight() / 5 * 4, getWidth() / 5, getHeight() / 5);
       
-      double imageSize = getWidth() / 5d;
+      double imageSize = getWidth() / 5;
       
       double[] noisyOriginal = noisy;
       double imageCounter = 0;
       int counter = 0;
-      for (double i = sliderViewSteps.getValue(); i >= 0; i -= thinkStepSize) {
-        double[] output = neuralNetwork.predictThreadSafe(noisy).transpose().data[0];
+      for (int i = sliderViewSteps.getValue(); i >= 0; i--) {
+        double[] nextInput = noisy;
+        
+        double[] stepSizeIndicator = new double[MAX_STEP_VARIANCE];
+        stepSizeIndicator[thinkStepSize - 1] = 1;
+        nextInput = addValuesToArray(nextInput, stepSizeIndicator);
+        
+        double[] states = new double[10];
+        int state = (int) (i / (double) MAX_STEP_SIZE * 10d);
+        states[state] = 1;
+        nextInput = addValuesToArray(nextInput, states);
+        
+        double[] output = neuralNetwork.predictThreadSafe(nextInput).transpose().data[0];
         output = subtract(output, 0.5);
-        output = devide(output, MAX_STEP_SIZE / 2d); // Needs to be amplified. For explanation see in training
+        output = devide(output, MAX_STEP_SIZE / speedUp);
         noisy = subtract(noisy, output);
         noisy = minmax(noisy, 0, 1);
         
-        int i2 = (int) (sliderViewSteps.getValue() - i);
+        int i2 = sliderViewSteps.getValue() - i;
         if (((double) i2 / sliderViewSteps.getValue() * 20d) - imageCounter > 1 || i2 == sliderViewSteps.getValue() - 1) {
           decodedPixels = doubleToPixels(noisy);
           int x = counter % 5;
