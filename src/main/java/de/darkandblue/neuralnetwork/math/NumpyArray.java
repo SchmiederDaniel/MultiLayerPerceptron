@@ -34,6 +34,18 @@ public class NumpyArray {
     return new NumpyArray(newData);
   }
   
+  public void checkMatchRows(NumpyArray other) {
+    if (rows() != other.rows()) {
+      throw new IllegalArgumentException("Rows doesn't match " + rows() + ", " + other.rows());
+    }
+  }
+  
+  public void checkMatchCols(NumpyArray other) {
+    if (cols() != other.cols()) {
+      throw new IllegalArgumentException("Cols doesn't match " + cols() + ", " + other.cols());
+    }
+  }
+  
   /*
   Does Matrix multiplication with arrays
    */
@@ -42,17 +54,27 @@ public class NumpyArray {
       throw new RuntimeException("Columns doesn't match rows " + cols() + ", " + other.rows());
     }
     double[][] newData = new double[rows()][other.cols()];
-  
+    
+    // slow
+//    for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
+//      for (int colIndex = 0; colIndex < other.cols(); colIndex++) {
+//        double sum = 0;
+//        for (int otherColIndex = 0; otherColIndex < cols(); otherColIndex++) {
+//          sum += data[rowIndex][otherColIndex] * other.data[otherColIndex][colIndex];
+//        }
+//        newData[rowIndex][colIndex] = sum;
+//      }
+//    }
+    
+    // fast
     for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
-      for (int colIndex = 0; colIndex < other.cols(); colIndex++) {
-        double sum = 0;
-        for (int otherColIndex = 0; otherColIndex < cols(); otherColIndex++) {
-          sum += data[rowIndex][otherColIndex] * other.data[otherColIndex][colIndex];
+      for (int otherColIndex = 0; otherColIndex < cols(); otherColIndex++) {
+        for (int colIndex = 0; colIndex < other.cols(); colIndex++) {
+          newData[rowIndex][colIndex] += data[rowIndex][otherColIndex] * other.data[otherColIndex][colIndex];
         }
-        newData[rowIndex][colIndex] = sum;
       }
     }
-  
+    
     return new NumpyArray(newData);
   }
   
@@ -69,7 +91,7 @@ public class NumpyArray {
     NumpyArray b = rows() < other.rows() ? other : this;
     
     // add one number to every value in array
-    if(a.rows() == 1 && a.cols() == 1) {
+    if (a.rows() == 1 && a.cols() == 1) {
       double[][] newData = new double[b.rows()][b.cols()];
       for (int rowIndex = 0; rowIndex < b.rows(); rowIndex++) {
         for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
@@ -79,7 +101,7 @@ public class NumpyArray {
       return new NumpyArray(newData);
     }
     
-    // add 1 dimensional array to a two dimensional array
+    // add 1 dimensional array to a two-dimensional array
     if (a.rows() == 1 && a.cols() == b.cols()) {
       double[][] newData = new double[b.rows()][a.cols()];
       for (int rowIndex = 0; rowIndex < b.rows(); rowIndex++) {
@@ -113,13 +135,13 @@ public class NumpyArray {
     boolean reversed = !(rows() < other.rows());
     NumpyArray a = rows() < other.rows() ? this : other;
     NumpyArray b = rows() < other.rows() ? other : this;
-  
+    
     // subtract one number to every value in array
-    if(a.rows() == 1 && a.cols() == 1) {
+    if (a.rows() == 1 && a.cols() == 1) {
       double[][] newData = new double[b.rows()][b.cols()];
       for (int rowIndex = 0; rowIndex < b.rows(); rowIndex++) {
         for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
-          if(reversed) {
+          if (reversed) {
             newData[rowIndex][colIndex] = b.data[rowIndex][colIndex] - a.data[0][0];
           } else {
             newData[rowIndex][colIndex] = a.data[0][0] - b.data[rowIndex][colIndex];
@@ -128,13 +150,13 @@ public class NumpyArray {
       }
       return new NumpyArray(newData);
     }
-  
-    // subtract 1 dimensional array from a two dimensional array
+    
+    // subtract 1 dimensional array from a two-dimensional array
     if (a.rows() == 1 && a.cols() == b.cols()) {
       double[][] newData = new double[b.rows()][a.cols()];
       for (int rowIndex = 0; rowIndex < b.rows(); rowIndex++) {
         for (int colIndex = 0; colIndex < a.cols(); colIndex++) {
-          if(reversed) {
+          if (reversed) {
             newData[rowIndex][colIndex] = b.data[rowIndex][colIndex] - a.data[0][colIndex];
           } else {
             newData[rowIndex][colIndex] = a.data[0][colIndex] - b.data[rowIndex][colIndex];
@@ -143,13 +165,13 @@ public class NumpyArray {
       }
       return new NumpyArray(newData);
     }
-  
+    
     // matrix subtraction
     if (a.rows() == b.rows() && a.cols() == b.cols()) {
       double[][] newData = new double[rows()][cols()];
       for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
         for (int coldIndex = 0; coldIndex < cols(); coldIndex++) {
-          if(reversed) {
+          if (reversed) {
             newData[rowIndex][coldIndex] = b.data[rowIndex][coldIndex] - a.data[rowIndex][coldIndex];
           } else {
             newData[rowIndex][coldIndex] = a.data[rowIndex][coldIndex] - b.data[rowIndex][coldIndex];
@@ -200,7 +222,7 @@ public class NumpyArray {
     }
     return new NumpyArray(newData);
   }
-  
+
 //  public NumpyArray subtract(NumpyArray other) {
 //    return (NumpyArray) super.subtract(other);
 //  }
@@ -222,14 +244,14 @@ public class NumpyArray {
     NumpyArray a = rows() < other.rows() ? this : other;
     NumpyArray b = rows() < other.rows() ? other : this;
     
-    if(a.cols() == 1 && a.rows() == 1) {
+    if (a.cols() == 1 && a.rows() == 1) {
       double[][] newData = new double[b.rows()][b.cols()];
       for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
         for (int rowIndex = 0; rowIndex < b.rows(); rowIndex++) {
           newData[rowIndex][colIndex] = a.data[0][0] * b.data[rowIndex][colIndex];
         }
       }
-  
+      
       return new NumpyArray(newData);
     }
     
@@ -255,22 +277,22 @@ public class NumpyArray {
       return new NumpyArray(newData);
     }
     
-    if(a.rows() == b.rows()) {
+    if (a.rows() == b.rows()) {
       a = cols() < other.cols() ? this : other;
       b = cols() < other.cols() ? other : this;
-  
-      if(a.cols() == 1) {
+      
+      if (a.cols() == 1) {
         double[][] newData = new double[rows()][b.cols()];
         for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
           for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
             newData[rowIndex][colIndex] = b.data[rowIndex][colIndex] * a.data[rowIndex][0];
           }
         }
-    
+        
         return new NumpyArray(newData);
       }
     }
-  
+    
     throw new RuntimeException("One array must be in the dimension of [1][x] or the same dimension of the second array " + a.dimension() + ", " + b.dimension());
   }
   
