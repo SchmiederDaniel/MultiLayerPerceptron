@@ -1,0 +1,350 @@
+package de.darkandblue.neuralnetwork.networks;
+
+import de.darkandblue.neuralnetwork.NetworkBuilder;
+import de.darkandblue.neuralnetwork.NeuralNetwork;
+import de.darkandblue.neuralnetwork.lossfunction.*;
+import de.darkandblue.neuralnetwork.math.NumpyArray;
+import de.darkandblue.neuralnetwork.util.MnistLoader;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.image.BufferedImage;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
+public class Diffusion extends JFrame {
+  public static void main(String[] args) {
+    new Diffusion();
+  }
+  
+  /*
+  TODO: Improve the diffusion proccess to make the third preview image represent the negative of the actual number
+        or Atleast make it possible to assume/detect which digit is shown in the negative preview.
+        
+        The Problem is that the diffusion proccess just removes the brightness of the whole image without checking
+        which areas of the image are important and shouldn't be denoised.
+        
+        TODO: Idea for corrected training: Make one forward pass and another one. than train the neural network on the
+        loss between two steps (Maybe adding a new value to the input which defines the denoise strength could help) 
+   */
+  Scene scene;
+  JSlider sliderViewSteps = new JSlider(1, Scene.MAX_STEP_SIZE - 1, Scene.MAX_STEP_SIZE / 2);
+  JSlider sliderLearningRate = new JSlider(0, 100000, (int) (Scene.learningRate * 100000));
+  
+  public Diffusion() {
+    setLayout(null);
+    scene = new Scene();
+    add(scene);
+    setBackground(new Color(120, 120, 120));
+    
+    JLabel labelNoise = new JLabel("Strength of noising before denoising (0.5):");
+    add(labelNoise);
+    add(sliderViewSteps);
+    sliderViewSteps.addChangeListener(e -> {
+      labelNoise.setText("Strength of noising before denoising (" + Math.round((double) sliderViewSteps.getValue() / Scene.MAX_STEP_SIZE * 100d) / 100d + "):");
+    });
+    
+    JLabel labelLR = new JLabel("LearningRate: " + Math.round(Scene.learningRate * 100d) / 100d);
+    add(labelLR);
+    add(sliderLearningRate);
+    sliderLearningRate.addChangeListener(e -> {
+      Scene.learningRate = (double) sliderLearningRate.getValue() / sliderLearningRate.getMaximum();
+      labelLR.setText("LearningRate: " + Math.round(Scene.learningRate * 100d) / 100d);
+    });
+    
+    addComponentListener(new ComponentAdapter() {
+      public void componentResized(ComponentEvent e) {
+        labelNoise.setSize(getWidth(), 20);
+        labelNoise.setLocation(10, getHeight() - 150);
+        
+        sliderViewSteps.setSize(getWidth() - 20, 30);
+        sliderViewSteps.setLocation(0, labelNoise.getY() + labelNoise.getHeight());
+        
+        labelLR.setSize(getWidth(), 20);
+        labelLR.setLocation(10, sliderViewSteps.getY() + sliderViewSteps.getHeight());
+        
+        sliderLearningRate.setSize(getWidth() - 20, 30);
+        sliderLearningRate.setLocation(0, labelLR.getY() + labelLR.getHeight());
+        
+        scene.setSize(getWidth() - 4, getWidth());
+      }
+    });
+    
+    setSize(800, 950);
+    setVisible(true);
+    setLocationRelativeTo(null);
+    
+    setDefaultCloseOperation(EXIT_ON_CLOSE);
+    
+    startAsyncThreads();
+  }
+  
+  void startAsyncThreads() {
+    new Thread(() -> {
+      while (true) {
+        scene.think();
+        try {
+          Thread.sleep(1500);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }).start();
+    
+    new Thread(() -> {
+      while (true) {
+        scene.train();
+      }
+    }).start();
+    
+    new Thread(() -> {
+      while (true) {
+        scene.repaint();
+      }
+    }).start();
+  }
+  
+  class Scene extends JPanel {
+    int imageResolution = 28;
+    int[][] images;
+    int[][] testImages;
+    int[] labels;
+    int[] testLabels;
+    
+    static double learningRate = 0.05;
+    LossFunction lossFunction = new LinearLoss();
+    NeuralNetwork neuralNetwork = new NetworkBuilder()
+      .layer.dense(imageResolution * imageResolution, 120)
+      .activation.sigmoid()
+      .layer.dense(120, imageResolution * imageResolution)
+      .activation.sigmoid()
+      .build();
+    private static final int MAX_STEP_SIZE = 800;
+    double thinkStepSize = 1d; // 0.5d = best
+    
+    public Scene() {
+      images = MnistLoader.readImages().stream().toArray(int[][]::new);
+      if (imageResolution != 28)
+        for (int i = 0; i < images.length; i++)
+          images[i] = downScale(images[i], imageResolution);
+      labels = MnistLoader.readLabels().stream().mapToInt(i -> i).toArray();
+      
+      testImages = MnistLoader.readTestImages().stream().toArray(int[][]::new);
+      testLabels = MnistLoader.readTestLabels().stream().mapToInt(i -> i).toArray();
+    }
+    
+    int trainIndex;
+    
+    public void train() {
+      trainIndex++;
+      if (trainIndex >= images.length)
+        trainIndex = 0;
+      int i = ThreadLocalRandom.current().nextInt(MAX_STEP_SIZE);
+      
+      int[] pixels = images[trainIndex];
+//      int label = labels[trainIndex];
+      double[] realData = pixelsToDouble(pixels);
+      
+      double[] input = addNoise(trainIndex, realData, (double) i / MAX_STEP_SIZE);
+      double[] target = addNoise(trainIndex, realData, (i - 1d) / MAX_STEP_SIZE);
+      target = subtract(input, target);
+      target = multiply(target, MAX_STEP_SIZE * 2d); // TODO: find out why do I need to multiply by 2 instead of deviding (usally it should take more space for -1 and +1 values inside 0-1)
+      target = add(target, 0.5);
+      
+      neuralNetwork.trainSingle(lossFunction, input, target, learningRate);
+    }
+    
+    static double[] addNoise(int seed, double[] array, double strength) {
+      double[] output = new double[array.length];
+      Random random = new Random(seed);
+      
+      for (int i = 0; i < array.length; i++) {
+        double value = array[i];
+        double diffrence = random.nextDouble() - value;
+        output[i] = value + diffrence * strength;
+      }
+      return output;
+    }
+    
+    int thinkIndex;
+    
+    void think() {
+      thinkIndex++;
+      thinkIndex %= testImages.length;
+    }
+    
+    public void paint(Graphics graphics) {
+      super.paint(graphics);
+      if (thinkIndex == 0)
+        return;
+      
+      int[] pixels = testImages[thinkIndex];
+//      int label = testLabels[thinkIndex];
+      setTitle("training steps: " + trainIndex + " learning rate: " + learningRate + " diffusion step size: " + MAX_STEP_SIZE);
+      double[] input = pixelsToDouble(pixels);
+      double[] noisy = addNoise(thinkIndex, input, (double) sliderViewSteps.getValue() / MAX_STEP_SIZE);
+      
+      int[] decodedPixels = doubleToPixels(noisy);
+      drawPixels(graphics, decodedPixels, 0, getHeight() / 5 * 4, getWidth() / 5, getHeight() / 5);
+      decodedPixels = doubleToPixels(input);
+      drawPixels(graphics, decodedPixels, getHeight() / 5, getHeight() / 5 * 4, getWidth() / 5, getHeight() / 5);
+      
+      double imageSize = getWidth() / 5d;
+      
+      double[] noisyOriginal = noisy;
+      double imageCounter = 0;
+      int counter = 0;
+      for (double i = sliderViewSteps.getValue(); i >= 0; i -= thinkStepSize) {
+        double[] output = neuralNetwork.predictThreadSafe(noisy).transpose().data[0];
+        output = subtract(output, 0.5);
+        output = devide(output, MAX_STEP_SIZE / 2d); // Needs to be amplified. For explanation see in training
+        noisy = subtract(noisy, output);
+        noisy = minmax(noisy, 0, 1);
+        
+        int i2 = (int) (sliderViewSteps.getValue() - i);
+        if (((double) i2 / sliderViewSteps.getValue() * 20d) - imageCounter > 1 || i2 == sliderViewSteps.getValue() - 1) {
+          decodedPixels = doubleToPixels(noisy);
+          int x = counter % 5;
+          int y = counter / 5;
+          drawPixels(
+            graphics,
+            decodedPixels,
+            (int) (imageSize * x),
+            (int) (imageSize * y),
+            (int) imageSize,
+            (int) imageSize
+          );
+          imageCounter = (double) i2 / sliderViewSteps.getValue() * 20d;
+          counter++;
+        }
+      }
+      drawPixels(graphics, doubleToPixels(noisy), getHeight() / 5 * 2, getHeight() / 5 * 4, getWidth() / 5, getHeight() / 5);
+      
+      double[] difference = NumpyArray.of(noisyOriginal).subtract(NumpyArray.of(noisy)).add(NumpyArray.of(0.5)).transpose().data[0];
+      drawPixels(graphics, doubleToPixels(difference), getHeight() / 5 * 3, getHeight() / 5 * 4, getWidth() / 5, getHeight() / 5);
+      
+      Graphics2D graphics2D = (Graphics2D) graphics;
+      graphics2D.setStroke(new BasicStroke(2f));
+    }
+    
+    static double[] addValuesToArray(double[] array, double... values) {
+      double[] output = new double[array.length + values.length];
+      System.arraycopy(array, 0, output, 0, array.length);
+      System.arraycopy(values, 0, output, array.length, values.length);
+      return output;
+    }
+    
+    void drawPixels(Graphics graphics, int[] pixels, int x, int y, int width, int height) {
+      BufferedImage bufferedImage = new BufferedImage(imageResolution, imageResolution, BufferedImage.TYPE_INT_RGB);
+      
+      for (int i = 0; i < imageResolution * imageResolution; i++) {
+        int brightness = Math.max(Math.min(pixels[i], 255), 0);
+        bufferedImage.setRGB(
+          i % imageResolution,
+          i / imageResolution,
+          new Color(brightness, brightness, brightness).getRGB()
+        );
+      }
+      
+      graphics.drawImage(
+        bufferedImage,
+        x, y,
+        width, height,
+        null
+      );
+    }
+    
+    static int[] downScale(int[] pixels, int toResolution) {
+      int[] resized = new int[toResolution * toResolution];
+      
+      for (int i = 0; i < pixels.length; i++) {
+        int x = i % 28;
+        int y = i / 28;
+        
+        x /= 28d / toResolution;
+        y /= 28d / toResolution;
+        int i2 = x + y * toResolution;
+        
+        resized[i2] += pixels[i];
+      }
+      
+      double divide = (double) pixels.length / resized.length;
+      for (int i = 0; i < resized.length; i++) {
+        resized[i] = (int) (resized[i] / divide);
+        resized[i] = Math.min(Math.max(resized[i], 0), 255);
+      }
+      
+      return resized;
+    }
+    
+    static double[] pixelsToDouble(int[] pixels) {
+      double[] output = new double[pixels.length];
+      for (int i = 0; i < pixels.length; i++) {
+        output[i] = pixels[i] / 255d;
+      }
+      return output;
+    }
+    
+    static int[] doubleToPixels(double[] pixels) {
+      int[] output = new int[pixels.length];
+      for (int i = 0; i < pixels.length; i++) {
+        output[i] = (int) (pixels[i] * 255d);
+      }
+      return output;
+    }
+    
+    static double[] subtract(double[] value1, double[] value2) {
+      if (value1.length != value2.length)
+        throw new RuntimeException("length doesnt match");
+      double[] output = new double[value1.length];
+      for (int i = 0; i < value1.length; i++) {
+        output[i] = value1[i] - value2[i];
+      }
+      return output;
+    }
+    
+    static double[] minmax(double[] array, double min, double max) {
+      double[] output = new double[array.length];
+      for (int i = 0; i < array.length; i++) {
+        double value = array[i];
+        output[i] = value < min ? min : value;
+        output[i] = value > max ? max : value;
+      }
+      return output;
+    }
+    
+    static double[] multiply(double[] value1, double value2) {
+      double[] output = new double[value1.length];
+      for (int i = 0; i < value1.length; i++) {
+        output[i] = value1[i] * value2;
+      }
+      return output;
+    }
+    
+    static double[] devide(double[] value1, double value2) {
+      double[] output = new double[value1.length];
+      for (int i = 0; i < value1.length; i++) {
+        output[i] = value1[i] / value2;
+      }
+      return output;
+    }
+    
+    static double[] subtract(double[] value1, double value2) {
+      double[] output = new double[value1.length];
+      for (int i = 0; i < value1.length; i++) {
+        output[i] = value1[i] - value2;
+      }
+      return output;
+    }
+    
+    static double[] add(double[] value1, double value2) {
+      double[] output = new double[value1.length];
+      for (int i = 0; i < value1.length; i++) {
+        output[i] = value1[i] + value2;
+      }
+      return output;
+    }
+  }
+}
