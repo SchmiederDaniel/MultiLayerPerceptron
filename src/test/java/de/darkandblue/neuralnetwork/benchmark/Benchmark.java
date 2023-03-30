@@ -4,6 +4,7 @@ import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
+import de.darkandblue.neuralnetwork.math.NumFloatArray;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 import javax.swing.*;
