@@ -20,7 +20,7 @@ public class NeuralNetwork {
   Should only be used for training and can cause problems when used asynchron
    */
   @Deprecated
-  public NumpyArray predict(double... input) {
+  public NumpyArray predict(float... input) {
     return predict(NumpyArray.of(input));
   }
   
@@ -32,7 +32,7 @@ public class NeuralNetwork {
     return output;
   }
   
-  public NumpyArray predictThreadSafe(double... input) {
+  public NumpyArray predictThreadSafe(float... input) {
     return predictThreadSafe(NumpyArray.of(input));
   }
   
@@ -45,7 +45,7 @@ public class NeuralNetwork {
     return output;
   }
   
-  public NumpyArray backwardWithoutTrain(LossFunction lossFunction, NumpyArray output, NumpyArray y, double learning_rate) {
+  public NumpyArray backwardWithoutTrain(LossFunction lossFunction, NumpyArray output, NumpyArray y, float learning_rate) {
     NumpyArray grad = lossFunction.loss_prime(y, output);
     for (int j = layerArray.length - 1; j >= 0; j--) {
       Layer layer = layerArray[j].deepCopy();
@@ -54,13 +54,13 @@ public class NeuralNetwork {
     return grad;
   }
   
-  public void trainSingle(LossFunction lossFunction, double[] x_train, double[] y_train, double learning_rate) {
+  public void trainSingle(LossFunction lossFunction, float[] x_train, float[] y_train, float learning_rate) {
     trainSingle(lossFunction, x_train, y_train, learning_rate, false);
   }
   
   // Own train function
-  public void trainSingle(LossFunction lossFunction, double[] x_train, double[] y_train, double learning_rate, boolean verbose) {
-    double error = 0;
+  public void trainSingle(LossFunction lossFunction, float[] x_train, float[] y_train, float learning_rate, boolean verbose) {
+    float error = 0;
     NumpyArray x = NumpyArray.of(x_train);
     NumpyArray y = NumpyArray.of(y_train);
     
@@ -83,7 +83,7 @@ public class NeuralNetwork {
       System.out.println("error=" + error);
   }
   
-  public NumpyArray trainWithoutPredict(LossFunction lossFunction, NumpyArray output, NumpyArray y, double learning_rate) {
+  public NumpyArray trainWithoutPredict(LossFunction lossFunction, NumpyArray output, NumpyArray y, float learning_rate) {
     NumpyArray grad = lossFunction.loss_prime(y, output);
     for (int j = layerArray.length - 1; j >= 0; j--) {
       Layer layer = layerArray[j];
@@ -92,7 +92,7 @@ public class NeuralNetwork {
     return grad;
   }
   
-  public NumpyArray trainWithoutPredict(LossFunction lossFunction, NumpyArray output, double[] y_train, double learning_rate) {
+  public NumpyArray trainWithoutPredict(LossFunction lossFunction, NumpyArray output, float[] y_train, float learning_rate) {
     NumpyArray y = NumpyArray.of(y_train);
     return trainWithoutPredict(lossFunction, output, y, learning_rate);
   }
@@ -101,7 +101,7 @@ public class NeuralNetwork {
     throw new RuntimeException("not implemented yet L");
   }
   
-  public NeuralNetwork copyMutate(double from, double to) {
+  public NeuralNetwork copyMutate(float from, float to) {
     throw new RuntimeException("not implemented yet L");
   }
   

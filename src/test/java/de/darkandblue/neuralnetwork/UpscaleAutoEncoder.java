@@ -17,7 +17,7 @@ public class UpscaleAutoEncoder extends JFrame {
   public static void main(String[] args) throws IOException {
     new UpscaleAutoEncoder();
   }
-  double learningRate = 0;
+  float learningRate = 0;
   
   public UpscaleAutoEncoder() throws IOException {
     setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -28,7 +28,7 @@ public class UpscaleAutoEncoder extends JFrame {
     
     JSlider sliderLearningRate = new JSlider(0, 5000, 0);
     sliderLearningRate.addChangeListener(e -> {
-      learningRate = sliderLearningRate.getValue() / (double) sliderLearningRate.getMaximum() * 5;
+      learningRate = sliderLearningRate.getValue() / (float) sliderLearningRate.getMaximum() * 5;
       updateTitle();
     });
     add(sliderLearningRate);
@@ -96,21 +96,21 @@ public class UpscaleAutoEncoder extends JFrame {
       trainIndex %= 60000;
       
       int[] pixels = imageList.get(trainIndex);
-      double[] x = pixelsToDouble(downScalePixels(pixels));
-      double[] y = pixelsToDouble(pixels);
+      float[] x = pixelsTofloat(downScalePixels(pixels));
+      float[] y = pixelsTofloat(pixels);
       
       neuralNetwork.trainSingle(lossFunction, x, y, learningRate, false);
     }
     
-    double[] pixelsToDouble(int[] pixels) {
-      double[] output = new double[pixels.length];
+    float[] pixelsTofloat(int[] pixels) {
+      float[] output = new float[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
-        output[i] = pixels[i] / 255d;
+        output[i] = pixels[i] / 255f;
       }
       return output;
     }
     
-    int[] doubleToPixels(double[] pixels) {
+    int[] floatToPixels(float[] pixels) {
       int[] output = new int[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
         output[i] = (int) (pixels[i] * 255d);
@@ -165,10 +165,10 @@ public class UpscaleAutoEncoder extends JFrame {
       setPixels(lowResPixels, image);
       graphics.drawImage(image, imageSize, 0, imageSize, imageSize, null);
       
-      double[] x = pixelsToDouble(lowResPixels);
+      float[] x = pixelsTofloat(lowResPixels);
       
-      double[] y = neuralNetwork.predictThreadSafe(x).transpose().data[0];
-      int[] predictedPixels = doubleToPixels(y);
+      float[] y = neuralNetwork.predictThreadSafe(x).transpose().data[0];
+      int[] predictedPixels = floatToPixels(y);
       image = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
       setPixels(predictedPixels, image);
       graphics.drawImage(image, imageSize * 2, 0, imageSize, imageSize, null);

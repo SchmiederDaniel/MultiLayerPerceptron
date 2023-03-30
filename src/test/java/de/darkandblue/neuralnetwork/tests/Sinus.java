@@ -50,32 +50,32 @@ public class Sinus extends JFrame {
       .activation.tanh()
       .build();
     LossFunction lossFunction = new MeanSquareError();
-    double learningRate = 0.00005;
+    float learningRate = 0.00005f;
   
     private static final int MAX_STEPS = 800;
-    private static final double CURVE_COUNT = 2;
+    private static final float CURVE_COUNT = 2;
   
     public Scene() {
       setBackground(Color.black);
       startAsyncThreads();
     }
     
-    double createY(double y) {
-      return Math.sin(Math.toRadians(y * 360 * CURVE_COUNT));
+    float createY(float y) {
+      return (float) Math.sin(Math.toRadians(y * 360 * CURVE_COUNT));
     }
     
     void train() {
-      ArrayList<Double> array = new ArrayList<>();
+      ArrayList<Float> array = new ArrayList<>();
       for (int x = 0; x < MAX_STEPS; x++)
-        array.add((double) x / MAX_STEPS);
+        array.add((float) x / MAX_STEPS);
       Collections.shuffle(array);
       
-      for (double x : array) {
-        double y = createY(x);
+      for (float x : array) {
+        float y = createY(x);
         neuralNetwork.trainSingle(
           lossFunction,
-          new double[] { x },
-          new double[] { y },
+          new float[] { x },
+          new float[] { y },
           learningRate
         );
       }
@@ -92,9 +92,9 @@ public class Sinus extends JFrame {
       int lastReal = -1;
       int lastFake = -1;
       for(int x = 0; x < this.getWidth(); x += 4) {
-        double input = (double) x / this.getWidth();
+        float input = (float) x / this.getWidth();
         int yReal = (int) ((createY(input) / 8d + 0.5) * getHeight());
-        double output = neuralNetwork.predictThreadSafe(input).data[0][0];
+        float output = neuralNetwork.predictThreadSafe(input).data[0][0];
         int yFake = (int) ((output / 8d + 0.5) * getHeight());
   
         if(lastReal != -1) {

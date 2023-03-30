@@ -1,11 +1,11 @@
 package de.darkandblue.neuralnetwork.initialization;
 
 public abstract class Distribution {
-  public abstract double biasFrom();
+  public abstract float biasFrom();
   
-  public abstract double biasTo();
+  public abstract float biasTo();
   
-  public abstract double weightsFrom();
+  public abstract float weightsFrom();
   
-  public abstract double weightsTo();
+  public abstract float weightsTo();
 }

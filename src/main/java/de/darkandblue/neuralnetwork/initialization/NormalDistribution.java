@@ -2,22 +2,22 @@ package de.darkandblue.neuralnetwork.initialization;
 
 public class NormalDistribution extends Distribution {
   @Override
-  public double biasFrom() {
+  public float biasFrom() {
     return -1;
   }
   
   @Override
-  public double biasTo() {
+  public float biasTo() {
     return 1;
   }
   
   @Override
-  public double weightsFrom() {
+  public float weightsFrom() {
     return -1;
   }
   
   @Override
-  public double weightsTo() {
+  public float weightsTo() {
     return 1;
   }
 }

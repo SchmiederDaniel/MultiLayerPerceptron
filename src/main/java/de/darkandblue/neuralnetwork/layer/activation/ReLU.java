@@ -6,7 +6,7 @@ import de.darkandblue.neuralnetwork.math.NumpyArray;
 public class ReLU extends Activation {
   @Override
   public NumpyArray activation(NumpyArray input) {
-    double[][] newData = new double[input.rows()][input.cols()];
+    float[][] newData = new float[input.rows()][input.cols()];
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
@@ -23,7 +23,7 @@ public class ReLU extends Activation {
   
   @Override
   public NumpyArray activation_prime(NumpyArray input) {
-    double[][] newData = new double[input.rows()][input.cols()];
+    float[][] newData = new float[input.rows()][input.cols()];
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {

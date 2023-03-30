@@ -5,13 +5,13 @@ import de.darkandblue.neuralnetwork.math.NumpyArray;
 public class MeanSquareError implements LossFunction {
   // Mean square error loss function
   @Override
-  public double loss(NumpyArray y_true, NumpyArray y_pred) {
+  public float loss(NumpyArray y_true, NumpyArray y_pred) {
     if (y_true.rows() != y_pred.rows())
       throw new IllegalArgumentException("Rows doesn't match " + y_true.rows() + ", " + y_pred.rows());
     if (y_true.cols() != y_pred.cols())
       throw new IllegalArgumentException("Cols doesn't match " + y_true.cols() + ", " + y_pred.cols());
     
-    double sum = 0;
+    float sum = 0;
     for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
         sum += Math.pow(y_true.data[rowIndex][colIndex] - y_pred.data[rowIndex][colIndex], 2);
@@ -29,11 +29,11 @@ public class MeanSquareError implements LossFunction {
     if (y_true.cols() != y_pred.cols())
       throw new IllegalArgumentException("Cols doesn't match " + y_true.cols() + ", " + y_pred.cols());
   
-    double[][] newData = new double[y_true.rows()][y_pred.cols()];
+    float[][] newData = new float[y_true.rows()][y_pred.cols()];
     
     for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
-        newData[rowIndex][colIndex] = 2d * (y_pred.data[rowIndex][colIndex] - y_true.data[rowIndex][colIndex]) / (y_true.rows() * y_true.cols());
+        newData[rowIndex][colIndex] = 2f * (y_pred.data[rowIndex][colIndex] - y_true.data[rowIndex][colIndex]) / (y_true.rows() * y_true.cols());
       }
     }
     return new NumpyArray(newData);

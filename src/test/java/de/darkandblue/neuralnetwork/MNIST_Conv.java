@@ -73,17 +73,17 @@ public class MNIST_Conv extends JFrame {
       int[] pixels = imageList.get(trainIndex);
       int label = labelList.get(trainIndex);
       
-      double[] x = pixelsToDouble(pixels);
-      double[] y = new double[10];
+      float[] x = pixelsTofloat(pixels);
+      float[] y = new float[10];
       y[label] = 1;
       
-      neuralNetwork.trainSingle(lossFunction, x, y, 0.1, false);
+      neuralNetwork.trainSingle(lossFunction, x, y, 0.1f, false);
     }
     
-    double[] pixelsToDouble(int[] pixels) {
-      double[] output = new double[pixels.length];
+    float[] pixelsTofloat(int[] pixels) {
+      float[] output = new float[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
-        output[i] = pixels[i] / 255d;
+        output[i] = pixels[i] / 255f;
       }
       return output;
     }
@@ -104,9 +104,9 @@ public class MNIST_Conv extends JFrame {
       }
       graphics.drawImage(image, 0, 0, getWidth(), getWidth(), null);
       
-      double[] x = pixelsToDouble(pixels);
+      float[] x = pixelsTofloat(pixels);
       NumpyArray predict = neuralNetwork.predict(x);
-      double[] y = predict.transpose().data[0];
+      float[] y = predict.transpose().data[0];
       
       String out = "";
       for (int i = 0; i < y.length; i++) {

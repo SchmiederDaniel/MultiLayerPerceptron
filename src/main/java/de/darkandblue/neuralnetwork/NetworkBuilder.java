@@ -27,16 +27,16 @@ public class NetworkBuilder {
     }
   
     public NetworkBuilder zeroBias() {
-      publicDistribution = new CustomDistribution(0, 0.0001d, -1, 1);
+      publicDistribution = new CustomDistribution(0, 0.0001f, -1, 1);
       return networkBuilder;
     }
   
-    public NetworkBuilder ownBias(double from, double to) {
+    public NetworkBuilder ownBias(float from, float to) {
       publicDistribution = new CustomDistribution(from, to, -1, 1);
       return networkBuilder;
     }
   
-    public NetworkBuilder customDistribution(double fromBias, double toBias, double fromWeight, double toWeight) {
+    public NetworkBuilder customDistribution(float fromBias, float toBias, float fromWeight, float toWeight) {
       publicDistribution = new CustomDistribution(fromBias, toBias, fromWeight, toWeight);
       return networkBuilder;
     }

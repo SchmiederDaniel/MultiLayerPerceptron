@@ -43,14 +43,14 @@ public class Diffusion extends JFrame {
     add(labelNoise);
     add(sliderViewSteps);
     sliderViewSteps.addChangeListener(e -> {
-      labelNoise.setText("Strength of noising before denoising (" + Math.round((double) sliderViewSteps.getValue() / Scene.MAX_STEP_SIZE * 100d) / 100d + "):");
+      labelNoise.setText("Strength of noising before denoising (" + Math.round((float) sliderViewSteps.getValue() / Scene.MAX_STEP_SIZE * 100d) / 100d + "):");
     });
     
     JLabel labelLR = new JLabel("LearningRate: " + Math.round(Scene.learningRate * 100d) / 100d);
     add(labelLR);
     add(sliderLearningRate);
     sliderLearningRate.addChangeListener(e -> {
-      Scene.learningRate = (double) sliderLearningRate.getValue() / sliderLearningRate.getMaximum() / 4d;
+      Scene.learningRate = (float) sliderLearningRate.getValue() / sliderLearningRate.getMaximum() / 4f;
       labelLR.setText("LearningRate: " + Math.round(Scene.learningRate * 10000d) / 10000d);
     });
     
@@ -89,10 +89,10 @@ public class Diffusion extends JFrame {
     
     private static final int STEP_INDEX_COUNT = 10;
     private static final int MAX_STEP_SIZE = 800;
-    static double learningRate = 0.05;
+    static float learningRate = 0.05f;
     LossFunction lossFunction = new LinearLoss();
     static NeuralNetwork neuralNetwork = new NetworkBuilder()
-      .distribution.customDistribution(0.01, 0.05, -0.52, 0.52)
+      .distribution.customDistribution(0.01f, 0.05f, -0.52f, 0.52f)
       .layer.dense(imageResolution * imageResolution + STEP_INDEX_COUNT, 140)
       .activation.sigmoid()
       .layer.dense(140, 140)
@@ -100,7 +100,7 @@ public class Diffusion extends JFrame {
       .layer.dense(140, imageResolution * imageResolution)
       .activation.sigmoid()
       .build();
-    static double thinkStepSize = 1d; // 0.5d = best
+    static float thinkStepSize = 1f; // 0.5d = best
     
     public Scene() {
       images = MnistLoader.readImages().stream().toArray(int[][]::new);
@@ -162,21 +162,21 @@ public class Diffusion extends JFrame {
       
       int[] pixels = images[trainIndex];
 //      int label = labels[trainIndex];
-      double[] realData = pixelsToDouble(pixels);
+      float[] realData = pixelsTofloat(pixels);
       
-      double[] input = addNoise(trainIndex, realData, convertNoiseStrength((double) i / MAX_STEP_SIZE));
-      double[] target = addNoise(trainIndex, realData, convertNoiseStrength((i - 1d) / MAX_STEP_SIZE));
+      float[] input = addNoise(trainIndex, realData, convertNoiseStrength((float) i / MAX_STEP_SIZE));
+      float[] target = addNoise(trainIndex, realData, convertNoiseStrength((i - 1f) / MAX_STEP_SIZE));
       target = subtract(input, target);
-      target = multiply(target, MAX_STEP_SIZE * 2d); // TODO: find out why do I need to multiply by 2 instead of deviding (usally it should take more space for -1 and +1 values inside 0-1)
-      target = add(target, 0.5);
+      target = multiply(target, MAX_STEP_SIZE * 2f); // TODO: find out why do I need to multiply by 2 instead of deviding (usally it should take more space for -1 and +1 values inside 0-1)
+      target = add(target, 0.5f);
       
-      double[] state = new double[STEP_INDEX_COUNT];
-      state[(int) ((double) i / MAX_STEP_SIZE * STEP_INDEX_COUNT)] = 1;
-      double[] input2 = addValuesToArray(input, state);
+      float[] state = new float[STEP_INDEX_COUNT];
+      state[(int) ((float) i / MAX_STEP_SIZE * STEP_INDEX_COUNT)] = 1;
+      float[] input2 = addValuesToArray(input, state);
       
       neuralNetwork.trainSingle(lossFunction, input2, target, learningRate);
 
-//      double[] output = neuralNetwork.trainSingle(lossFunction, input2, target, learningRate).transpose().data[0];
+//      float[] output = neuralNetwork.trainSingle(lossFunction, input2, target, learningRate).transpose().data[0];
 //      output = subtract(output, 0.5);
 //      output = devide(output, MAX_STEP_SIZE / 2d);
 //      input = subtract(input, output);
@@ -191,19 +191,19 @@ public class Diffusion extends JFrame {
 //      neuralNetwork.trainSingle(lossFunction, input, target, learningRate / 2d);
     }
     
-    static double[] addNoise(int seed, double[] array, double strength) {
-      double[] output = new double[array.length];
+    static float[] addNoise(int seed, float[] array, float strength) {
+      float[] output = new float[array.length];
       Random random = new Random(seed);
       
       for (int i = 0; i < array.length; i++) {
-        double value = array[i];
-        double diffrence = random.nextDouble() - value;
+        float value = array[i];
+        float diffrence = random.nextFloat() - value;
         output[i] = value + diffrence * strength;
       }
       return output;
     }
     
-    static double convertNoiseStrength(double x) {
+    static float convertNoiseStrength(float x) {
       return x - x * x + x;
 //      return x * x;
 //      return x;
@@ -217,32 +217,32 @@ public class Diffusion extends JFrame {
       BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
       Graphics2D graphics = bufferedImage.createGraphics();
       
-      double[] pixels = pixelsToDouble(testImages[thinkIndex]);
-      double[] noisy = addNoise(thinkIndex, pixels, (double) sliderViewSteps.getValue() / MAX_STEP_SIZE);
+      float[] pixels = pixelsTofloat(testImages[thinkIndex]);
+      float[] noisy = addNoise(thinkIndex, pixels, (float) sliderViewSteps.getValue() / MAX_STEP_SIZE);
       
-      int[] decodedPixels = doubleToPixels(noisy);
+      int[] decodedPixels = floatToPixels(noisy);
       drawPixels(graphics, decodedPixels, 0, height / 5 * 4, width / 5, height / 5);
-      decodedPixels = doubleToPixels(pixels);
+      decodedPixels = floatToPixels(pixels);
       drawPixels(graphics, decodedPixels, height / 5, height / 5 * 4, width / 5, height / 5);
       
-      double imageSize = width / 5d;
+      float imageSize = width / 5f;
       
-      double[] noisyOriginal = noisy;
-      double imageCounter = 0;
+      float[] noisyOriginal = noisy;
+      float imageCounter = 0;
       int counter = 0;
-      for (double i = sliderViewSteps.getValue(); i >= 0; i -= thinkStepSize) {
-        double[] state = new double[STEP_INDEX_COUNT];
+      for (float i = sliderViewSteps.getValue(); i >= 0; i -= thinkStepSize) {
+        float[] state = new float[STEP_INDEX_COUNT];
         state[(int) (i / MAX_STEP_SIZE * STEP_INDEX_COUNT)] = 1;
-        double[] input = addValuesToArray(noisy, state);
-        double[] output = neuralNetwork.predictThreadSafe(input).transpose().data[0];
-        output = subtract(output, 0.5);
-        output = devide(output, MAX_STEP_SIZE / 2d); // Needs to be amplified. For explanation see in training
+        float[] input = addValuesToArray(noisy, state);
+        float[] output = neuralNetwork.predictThreadSafe(input).transpose().data[0];
+        output = subtract(output, 0.5f);
+        output = devide(output, MAX_STEP_SIZE / 2f); // Needs to be amplified. For explanation see in training
         noisy = subtract(noisy, output);
         noisy = minmax(noisy, 0, 1);
         
         int i2 = (int) (sliderViewSteps.getValue() - i);
-        if (((double) i2 / sliderViewSteps.getValue() * 20d) - imageCounter > 1 || i2 == sliderViewSteps.getValue() - 1) {
-          decodedPixels = doubleToPixels(noisy);
+        if (((float) i2 / sliderViewSteps.getValue() * 20d) - imageCounter > 1 || i2 == sliderViewSteps.getValue() - 1) {
+          decodedPixels = floatToPixels(noisy);
           int x = counter % 5;
           int y = counter / 5;
           drawPixels(
@@ -253,14 +253,14 @@ public class Diffusion extends JFrame {
             (int) imageSize,
             (int) imageSize
           );
-          imageCounter = (double) i2 / sliderViewSteps.getValue() * 20d;
+          imageCounter = (float) i2 / sliderViewSteps.getValue() * 20f;
           counter++;
         }
       }
-      drawPixels(graphics, doubleToPixels(noisy), height / 5 * 2, height / 5 * 4, width / 5, height / 5);
+      drawPixels(graphics, floatToPixels(noisy), height / 5 * 2, height / 5 * 4, width / 5, height / 5);
       
-      double[] difference = NumpyArray.of(noisyOriginal).subtract(NumpyArray.of(noisy)).add(NumpyArray.of(0.5)).transpose().data[0];
-      drawPixels(graphics, doubleToPixels(difference), height / 5 * 3, height / 5 * 4, width / 5, height / 5);
+      float[] difference = NumpyArray.of(noisyOriginal).subtract(NumpyArray.of(noisy)).add(NumpyArray.of(0.5f)).transpose().data[0];
+      drawPixels(graphics, floatToPixels(difference), height / 5 * 3, height / 5 * 4, width / 5, height / 5);
       
       return bufferedImage;
     }
@@ -275,8 +275,8 @@ public class Diffusion extends JFrame {
       graphics.drawImage(bufferedImage, 0, 0, getWidth(), getHeight(), null);
     }
     
-    static double[] addValuesToArray(double[] array, double... values) {
-      double[] output = new double[array.length + values.length];
+    static float[] addValuesToArray(float[] array, float... values) {
+      float[] output = new float[array.length + values.length];
       System.arraycopy(array, 0, output, 0, array.length);
       System.arraycopy(values, 0, output, array.length, values.length);
       return output;
@@ -316,7 +316,7 @@ public class Diffusion extends JFrame {
         resized[i2] += pixels[i];
       }
       
-      double divide = (double) pixels.length / resized.length;
+      float divide = (float) pixels.length / resized.length;
       for (int i = 0; i < resized.length; i++) {
         resized[i] = (int) (resized[i] / divide);
         resized[i] = Math.min(Math.max(resized[i], 0), 255);
@@ -325,15 +325,15 @@ public class Diffusion extends JFrame {
       return resized;
     }
     
-    static double[] pixelsToDouble(int[] pixels) {
-      double[] output = new double[pixels.length];
+    static float[] pixelsTofloat(int[] pixels) {
+      float[] output = new float[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
-        output[i] = pixels[i] / 255d;
+        output[i] = pixels[i] / 255f;
       }
       return output;
     }
     
-    static int[] doubleToPixels(double[] pixels) {
+    static int[] floatToPixels(float[] pixels) {
       int[] output = new int[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
         output[i] = (int) (pixels[i] * 255d);
@@ -341,52 +341,52 @@ public class Diffusion extends JFrame {
       return output;
     }
     
-    static double[] subtract(double[] value1, double[] value2) {
+    static float[] subtract(float[] value1, float[] value2) {
       if (value1.length != value2.length)
         throw new RuntimeException("length doesnt match");
-      double[] output = new double[value1.length];
+      float[] output = new float[value1.length];
       for (int i = 0; i < value1.length; i++) {
         output[i] = value1[i] - value2[i];
       }
       return output;
     }
     
-    static double[] minmax(double[] array, double min, double max) {
-      double[] output = new double[array.length];
+    static float[] minmax(float[] array, float min, float max) {
+      float[] output = new float[array.length];
       for (int i = 0; i < array.length; i++) {
-        double value = array[i];
+        float value = array[i];
         output[i] = value < min ? min : value;
         output[i] = value > max ? max : value;
       }
       return output;
     }
     
-    static double[] multiply(double[] value1, double value2) {
-      double[] output = new double[value1.length];
+    static float[] multiply(float[] value1, float value2) {
+      float[] output = new float[value1.length];
       for (int i = 0; i < value1.length; i++) {
         output[i] = value1[i] * value2;
       }
       return output;
     }
     
-    static double[] devide(double[] value1, double value2) {
-      double[] output = new double[value1.length];
+    static float[] devide(float[] value1, float value2) {
+      float[] output = new float[value1.length];
       for (int i = 0; i < value1.length; i++) {
         output[i] = value1[i] / value2;
       }
       return output;
     }
     
-    static double[] subtract(double[] value1, double value2) {
-      double[] output = new double[value1.length];
+    static float[] subtract(float[] value1, float value2) {
+      float[] output = new float[value1.length];
       for (int i = 0; i < value1.length; i++) {
         output[i] = value1[i] - value2;
       }
       return output;
     }
     
-    static double[] add(double[] value1, double value2) {
-      double[] output = new double[value1.length];
+    static float[] add(float[] value1, float value2) {
+      float[] output = new float[value1.length];
       for (int i = 0; i < value1.length; i++) {
         output[i] = value1[i] + value2;
       }

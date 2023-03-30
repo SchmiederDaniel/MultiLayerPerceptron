@@ -46,7 +46,7 @@ public class Convolutional extends Layer {
   }
   
   @Override
-  public NumpyArray backward(NumpyArray output_gradient, double learning_rate) {
+  public NumpyArray backward(NumpyArray output_gradient, float learning_rate) {
     return null;
   }
   

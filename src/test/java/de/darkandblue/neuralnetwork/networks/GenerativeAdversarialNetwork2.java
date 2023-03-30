@@ -74,7 +74,7 @@ public class GenerativeAdversarialNetwork2 extends JFrame {
     int noiseCount = 64;
     LossFunction generatorLoss = new LinearLoss();
     LossFunction discriminatorLoss = new BinaryCrossEntropy();
-    double learningRate = 0.01;
+    float learningRate = 0.01f;
     
     public Scene() {
       images = MnistLoader.readImages().stream().toArray(int[][]::new);
@@ -105,14 +105,14 @@ public class GenerativeAdversarialNetwork2 extends JFrame {
       if (trainIndex >= images.length)
         trainIndex = 0;
       
-      double[] noiseData = new double[noiseCount + 10];
+      float[] noiseData = new float[noiseCount + 10];
       for (int i = 0; i < noiseCount; i++)
-        noiseData[i] = Math.random();
+        noiseData[i] = (float) Math.random();
       
       int fakeLabel = (int) (Math.random() * 10);
       noiseData[noiseCount + fakeLabel] = 1;
-      double[] generatedData = generator.predict(NumpyArray.of(noiseData)).transpose().data[0];
-      double discriminated = discriminator.predict(NumpyArray.of(generatedData)).data[0][0];
+      float[] generatedData = generator.predict(NumpyArray.of(noiseData)).transpose().data[0];
+      float discriminated = discriminator.predict(NumpyArray.of(generatedData)).data[0][0];
   
       for (boolean rand : new boolean[] { false, true }) {
         // train generator
@@ -122,8 +122,8 @@ public class GenerativeAdversarialNetwork2 extends JFrame {
           NumpyArray.of(rand ? 0 : 1),
           learningRate
         );
-        double[] data = grad.transpose().data[0];
-        double[] truncated = new double[imageResolution * imageResolution];
+        float[] data = grad.transpose().data[0];
+        float[] truncated = new float[imageResolution * imageResolution];
         System.arraycopy(data, 0, truncated, 0, truncated.length);
         grad = NumpyArray.of(truncated);//.multiplyScalar(-1);
         if(rand == false)
@@ -140,26 +140,26 @@ public class GenerativeAdversarialNetwork2 extends JFrame {
       // train discriminator
       int[] pixels = images[trainIndex];
 //      int label = labels[trainIndex];
-      double[] realData = pixelsToDouble(pixels);
+      float[] realData = pixelsTofloat(pixels);
 
       discriminator.trainSingle(
         discriminatorLoss,
         realData,
-        new double[] { 0 },
+        new float[] { 0 },
         learningRate
       );
 
       discriminator.trainSingle(
         discriminatorLoss,
         generatedData,
-        new double[] { 1 },
+        new float[] { 1 },
         learningRate
       );
     }
     
     int thinkIndex;
     int thinkLabel;
-    double[] noiseThink = new double[noiseCount];
+    float[] noiseThink = new float[noiseCount];
     
     void think() {
       thinkIndex++;
@@ -170,18 +170,18 @@ public class GenerativeAdversarialNetwork2 extends JFrame {
       thinkIndex %= images.length;
       
       for (int i = 0; i < noiseCount; i++)
-        noiseThink[i] = Math.random();
+        noiseThink[i] = (float) Math.random();
     }
     
     public void paint(Graphics graphics) {
       if (thinkIndex == 0)
         return;
       
-      double[] thinkInput = new double[noiseCount + 10];
+      float[] thinkInput = new float[noiseCount + 10];
       System.arraycopy(noiseThink, 0, thinkInput, 0, noiseThink.length);
       thinkInput[noiseCount + thinkLabel] = 1;
-      double[] generatedData = generator.predictThreadSafe(thinkInput).transpose().data[0];
-      int[] pixels = doubleToPixels(generatedData);
+      float[] generatedData = generator.predictThreadSafe(thinkInput).transpose().data[0];
+      int[] pixels = floatToPixels(generatedData);
       
       BufferedImage bufferedImage = new BufferedImage(imageResolution, imageResolution, BufferedImage.TYPE_INT_RGB);
       
@@ -209,14 +209,14 @@ public class GenerativeAdversarialNetwork2 extends JFrame {
         int x = i % 28;
         int y = i / 28;
         
-        x /= (double) 28 / to;
-        y /= (double) 28 / to;
+        x /= (float) 28 / to;
+        y /= (float) 28 / to;
         int i2 = x + y * to;
         
         resized[i2] += pixels[i];
       }
       
-      double divide = (double) pixels.length / resized.length;
+      float divide = (float) pixels.length / resized.length;
       for (int i = 0; i < resized.length; i++) {
         resized[i] = (int) (resized[i] / divide);
         resized[i] = Math.min(Math.max(resized[i], 0), 255);
@@ -225,15 +225,15 @@ public class GenerativeAdversarialNetwork2 extends JFrame {
       return resized;
     }
     
-    static double[] pixelsToDouble(int[] pixels) {
-      double[] output = new double[pixels.length];
+    static float[] pixelsTofloat(int[] pixels) {
+      float[] output = new float[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
-        output[i] = pixels[i] / 255d;
+        output[i] = pixels[i] / 255f;
       }
       return output;
     }
     
-    static int[] doubleToPixels(double[] pixels) {
+    static int[] floatToPixels(float[] pixels) {
       int[] output = new int[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
         output[i] = (int) (pixels[i] * 255d);

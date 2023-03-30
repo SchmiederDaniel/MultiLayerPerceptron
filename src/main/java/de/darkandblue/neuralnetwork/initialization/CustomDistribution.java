@@ -1,11 +1,11 @@
 package de.darkandblue.neuralnetwork.initialization;
 
 public class CustomDistribution extends Distribution {
-  double biasFrom;
-  double biasTo;
-  double weightFrom;
-  double weightTo;
-  public CustomDistribution(double biasFrom, double biasTo, double weightFrom, double weightTo) {
+  float biasFrom;
+  float biasTo;
+  float weightFrom;
+  float weightTo;
+  public CustomDistribution(float biasFrom, float biasTo, float weightFrom, float weightTo) {
     super();
     
     this.biasFrom = biasFrom;
@@ -16,22 +16,22 @@ public class CustomDistribution extends Distribution {
   }
   
   @Override
-  public double biasFrom() {
+  public float biasFrom() {
     return biasFrom;
   }
   
   @Override
-  public double biasTo() {
+  public float biasTo() {
     return biasTo;
   }
   
   @Override
-  public double weightsFrom() {
+  public float weightsFrom() {
     return weightFrom;
   }
   
   @Override
-  public double weightsTo() {
+  public float weightsTo() {
     return weightTo;
   }
 }

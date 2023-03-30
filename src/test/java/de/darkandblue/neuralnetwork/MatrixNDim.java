@@ -6,7 +6,7 @@ import java.util.Arrays;
 public class MatrixNDim {
   public static void main(String[] args) {
 //    Object[] array = createArray(3, 4, 2, 3);
-    Object array = Array.newInstance(double.class, 3, 4, 2, 3);
+    Object array = Array.newInstance(float.class, 3, 4, 2, 3);
   
     System.out.println("" + Arrays.deepToString((Object[]) array));
   }

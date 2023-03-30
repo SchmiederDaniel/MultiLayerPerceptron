@@ -13,7 +13,7 @@ public class SigmoidActivation extends Activation {
   
   @Override
   public NumpyArray activation(NumpyArray input) {
-    double[][] newData = new double[input.rows()][input.cols()];
+    float[][] newData = new float[input.rows()][input.cols()];
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
@@ -24,17 +24,17 @@ public class SigmoidActivation extends Activation {
     return new NumpyArray(newData);
   }
   
-  private static double sigmoid(double x) {
-    return 1d / (1d + Math.exp(-x));
+  private static float sigmoid(float x) {
+    return (float) (1f / (1f + Math.exp(-x)));
   }
   
   @Override
   public NumpyArray activation_prime(NumpyArray input) {
-    double[][] newData = new double[input.rows()][input.cols()];
+    float[][] newData = new float[input.rows()][input.cols()];
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
-        double s = sigmoid(input.data[rowIndex][colIndex]);
+        float s = sigmoid(input.data[rowIndex][colIndex]);
         newData[rowIndex][colIndex] = s * (1 - s);
       }
     }

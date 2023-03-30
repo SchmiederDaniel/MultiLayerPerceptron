@@ -4,7 +4,6 @@ import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
-import de.darkandblue.neuralnetwork.math.NumFloatArray;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 import javax.swing.*;
@@ -12,7 +11,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class Benchmark {
-  static final double[][][] trainingData = new double[][][] {
+  static final float[][][] trainingData = new float[][][] {
     { { 1, 1 }, { 0 } },
     { { 1, 0 }, { 1 } },
     { { 0, 1 }, { 1 } },
@@ -25,25 +24,25 @@ public class Benchmark {
     NeuralNetwork neuralNetwork = new NetworkBuilder()
       .layer.dense(
         new NumpyArray(
-          new double[][] {
-            { -0.5845703173805659, -0.33456588808097765 },
-            { 0.9355118188482414, -0.9877656354684774 }
+          new float[][] {
+            { -0.5845703173805659f, -0.33456588808097765f },
+            { 0.9355118188482414f, -0.9877656354684774f }
           }
         ),
-        new NumpyArray(new double[][] {
-          { 0.4617563814065817 },
-          { -0.17983837701559668 }
+        new NumpyArray(new float[][] {
+          { 0.4617563814065817f },
+          { -0.17983837701559668f }
         })
       )
       .activation.sigmoid()
       .layer.dense(
         new NumpyArray(
-          new double[][] {
-            { 0.8797307775638197, 0.8943898353263877 },
+          new float[][] {
+            { 0.8797307775638197f, 0.8943898353263877f },
           }
         ),
-        new NumpyArray(new double[][] {
-          { 0.9274095940464153 }
+        new NumpyArray(new float[][] {
+          { 0.9274095940464153f }
         })
       )
       .activation.sigmoid()
@@ -52,7 +51,7 @@ public class Benchmark {
     JFrame frame = new JFrame();
     frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     frame.setSize(800, 800);
-    double size = 50;
+    float size = 50;
     BufferedImage bufferedImage = new BufferedImage((int) size, (int) size, BufferedImage.TYPE_INT_RGB);
     JPanel panel = new JPanel() {
       public void paint(Graphics graphics) {
@@ -78,20 +77,20 @@ public class Benchmark {
     new Thread(() -> {
       int counter = 0;
       boolean stop = false;
-      double timeTotal = 0;
+      float timeTotal = 0;
       while (!stop) {
-        double error = 0;
-        double time = 0;
-        for (double[][] data : trainingData) {
+        float error = 0;
+        float time = 0;
+        for (float[][] data : trainingData) {
           long timeStamp = System.nanoTime();
-          double[] inputs = data[0];
-          double[] targets = data[1];
+          float[] inputs = data[0];
+          float[] targets = data[1];
           
-          neuralNetwork.trainSingle(LOSS_FUNCTION, inputs, targets, 0.0001d, false);
+          neuralNetwork.trainSingle(LOSS_FUNCTION, inputs, targets, 0.0001f, false);
           
           time += System.nanoTime() - timeStamp;
           counter++;
-          double output = neuralNetwork.predict(NumpyArray.of(inputs)).transpose().data[0][0];
+          float output = neuralNetwork.predict(NumpyArray.of(inputs)).transpose().data[0][0];
           output = Math.min(output, 1);
           output = Math.max(output, 0);
           error += Math.abs(targets[0] - output);

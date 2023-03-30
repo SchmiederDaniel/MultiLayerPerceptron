@@ -18,7 +18,7 @@ public class CompressAutoEncoder extends JFrame {
     new CompressAutoEncoder();
   }
   
-  double learningRate = 0.025;
+  float learningRate = 0.025f;
   
   public CompressAutoEncoder() {
     setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -27,9 +27,9 @@ public class CompressAutoEncoder extends JFrame {
     Scene scene = new Scene();
     add(scene);
     
-    JSlider sliderLearningRate = new JSlider(0, 5000, (int) (5000d * learningRate * 3d));
+    JSlider sliderLearningRate = new JSlider(0, 5000, (int) (5000f * learningRate * 3f));
     sliderLearningRate.addChangeListener(e -> {
-      learningRate = sliderLearningRate.getValue() / (double) sliderLearningRate.getMaximum() / 3d;
+      learningRate = sliderLearningRate.getValue() / (float) sliderLearningRate.getMaximum() / 3f;
       updateTitle();
     });
     add(sliderLearningRate);
@@ -112,19 +112,19 @@ public class CompressAutoEncoder extends JFrame {
       }).start();
     }
     
-    double testError;
+    float testError;
     void test() {
-      double sumTotal = 0;
+      float sumTotal = 0;
       int iterations = 3000;
       for (int i = 0; i < iterations; i++) {
         int[] pixels = imageList.get(i);
-        double[] x = pixelsToDouble(pixels);
+        float[] x = pixelsToFloat(pixels);
   
         NumpyArray encoderOutput = neuralNetworkEncoder.predictThreadSafe(NumpyArray.of(x));
         NumpyArray decoderOutput = neuralNetworkDecoder.predictThreadSafe(encoderOutput);
   
-        double[] totalError = decoderOutput.transpose().data[0];
-        double sum = 0;
+        float[] totalError = decoderOutput.transpose().data[0];
+        float sum = 0;
         for (int e = 0; e < totalError.length; e++) {
           sum += Math.abs(x[e] - totalError[e]);
         }
@@ -139,7 +139,7 @@ public class CompressAutoEncoder extends JFrame {
       trainIndex %= 60000;
       
       int[] pixels = imageList.get(trainIndex);
-      double[] x = pixelsToDouble(pixels);
+      float[] x = pixelsToFloat(pixels);
       
       NumpyArray encoderOutput = neuralNetworkEncoder.predict(NumpyArray.of(x));
       NumpyArray decoderOutput = neuralNetworkDecoder.predict(encoderOutput);
@@ -149,18 +149,18 @@ public class CompressAutoEncoder extends JFrame {
       // making gradient ascent on the encoder
       grad = grad.multiplyScalar(-1);
   
-      neuralNetworkEncoder.trainWithoutPredict(encoderLossFunction, encoderOutput, grad, learningRate * 0.5d);
+      neuralNetworkEncoder.trainWithoutPredict(encoderLossFunction, encoderOutput, grad, learningRate * 0.5f);
     }
     
-    double[] pixelsToDouble(int[] pixels) {
-      double[] output = new double[pixels.length];
+    float[] pixelsToFloat(int[] pixels) {
+      float[] output = new float[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
-        output[i] = pixels[i] / 255d;
+        output[i] = pixels[i] / 255f;
       }
       return output;
     }
     
-    int[] doubleToPixels(double[] pixels) {
+    int[] floatToPixels(float[] pixels) {
       int[] output = new int[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
         output[i] = (int) (pixels[i] * 255d);
@@ -188,16 +188,16 @@ public class CompressAutoEncoder extends JFrame {
       setPixels(pixels, image);
       graphics.drawImage(image, 0, 0, imageSize, imageSize, null);
       
-      double[] inputs = pixelsToDouble(pixels);
+      float[] inputs = pixelsToFloat(pixels);
       NumpyArray x = neuralNetworkEncoder.predictThreadSafe(inputs);
       
-      int[] lowResPixels = doubleToPixels(x.transpose().data[0]);
+      int[] lowResPixels = floatToPixels(x.transpose().data[0]);
       image = new BufferedImage(7, 7, BufferedImage.TYPE_INT_RGB);
       setPixels(lowResPixels, image);
       graphics.drawImage(image, imageSize, 0, imageSize, imageSize, null);
       
-      double[] y = neuralNetworkDecoder.predictThreadSafe(x).transpose().data[0];
-      int[] predictedPixels = doubleToPixels(y);
+      float[] y = neuralNetworkDecoder.predictThreadSafe(x).transpose().data[0];
+      int[] predictedPixels = floatToPixels(y);
       image = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
       setPixels(predictedPixels, image);
       graphics.drawImage(image, imageSize * 2, 0, imageSize, imageSize, null);

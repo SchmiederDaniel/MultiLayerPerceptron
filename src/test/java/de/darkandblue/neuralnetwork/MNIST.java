@@ -105,20 +105,20 @@ public class MNIST extends JFrame {
       int[] pixels = imageList.get(trainIndex);
       int label = labelList.get(trainIndex);
       
-      double[] x = pixelsToDouble(pixels);
-      double[] y = new double[10];
+      float[] x = pixelsTofloat(pixels);
+      float[] y = new float[10];
       y[label] = 1;
       
-      neuralNetwork.trainSingle(lossFunction, x, y, 0.3, false);
+      neuralNetwork.trainSingle(lossFunction, x, y, 0.3f, false);
       
       for (Layer layer : neuralNetwork.layerArray) {
         if (layer instanceof Dense) {
           Dense dense = ((Dense) layer);
           if(trainIndex % 1000 == 0) { // remove faded out graidents
             for (int rowIndex = 0; rowIndex < dense.weights.rows(); rowIndex++) {
-              double[] row = dense.weights.data[rowIndex];
+              float[] row = dense.weights.data[rowIndex];
               for (int colIndex = 0; colIndex < dense.weights.cols(); colIndex++) {
-                double v = row[colIndex];
+                float v = row[colIndex];
                 if(Math.abs(v) <= 0.0001) {
                   
                 }
@@ -130,8 +130,8 @@ public class MNIST extends JFrame {
           // make the gradient fade out
           for (int rowIndex = 0; rowIndex < dense.weights.rows(); rowIndex++) {
             for (int colIndex = 0; colIndex < dense.weights.cols(); colIndex++) {
-              double v = dense.weights.data[rowIndex][colIndex];
-              double strength = 0.00001;
+              float v = dense.weights.data[rowIndex][colIndex];
+              float strength = 0.00001f;
               if (v > 0)
                 v -= strength;
               else
@@ -143,31 +143,31 @@ public class MNIST extends JFrame {
       }
     }
     
-    double[] pixelsToDouble(int[] pixels) {
-      double[] output = new double[pixels.length];
+    float[] pixelsTofloat(int[] pixels) {
+      float[] output = new float[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
-        output[i] = pixels[i] / 255d;
+        output[i] = pixels[i] / 255f;
       }
       return output;
     }
     
-    List<Double> testingErrorList = new ArrayList<>();
+    List<Float> testingErrorList = new ArrayList<>();
     
     void test() {
-      double sum = 0;
+      float sum = 0;
       for (int i = 0; i < 1000; i++) {
         int[] pixels = testImageList.get(i);
         int label = testLabelList.get(i);
-        double[] x = pixelsToDouble(pixels);
+        float[] x = pixelsTofloat(pixels);
         
-        double[] y = new double[10];
+        float[] y = new float[10];
         y[label] = 1;
         
         NumpyArray output = neuralNetwork.predictThreadSafe(x);
-        double error = lossFunction.loss(NumpyArray.of(y), output);
+        float error = lossFunction.loss(NumpyArray.of(y), output);
         sum += 1 - error;
       }
-      double avg = sum / 1000d;
+      float avg = sum / 1000f;
       
       testingErrorList.add(avg);
       if (testingErrorList.size() > 500)
@@ -180,9 +180,9 @@ public class MNIST extends JFrame {
     
     int[] displayImagePixels;
     
-    double highestValueOfArray(double[] array) {
-      double max = 0;
-      for (double a : array) {
+    float highestValueOfArray(float[] array) {
+      float max = 0;
+      for (float a : array) {
         if (a > max)
           max = a;
       }
@@ -200,11 +200,11 @@ public class MNIST extends JFrame {
       }
       graphics.drawImage(image, 0, 0, getWidth() / 2, getHeight(), null);
       
-      double[] x = pixelsToDouble(displayImagePixels);
+      float[] x = pixelsTofloat(displayImagePixels);
       NumpyArray predict = neuralNetwork.predictThreadSafe(x);
-      double[] y = predict.transpose().data[0];
+      float[] y = predict.transpose().data[0];
       
-      double highestValue = highestValueOfArray(y);
+      float highestValue = highestValueOfArray(y);
       graphics.setColor(Color.white);
       graphics.setFont(font);
       int label = testLabelList.get(paintIndex);
@@ -241,13 +241,13 @@ public class MNIST extends JFrame {
       }
       
       int posY = 0;
-      double size = 5; // size of weight in pixel
+      float size = 5; // size of weight in pixel
       for (Layer layer : neuralNetwork.layerArray) {
         if (layer instanceof Dense) {
           Dense dense = ((Dense) layer);
           int posX = 0;
-          for (double[] a : dense.weights.data) {
-            for (double b : a) {
+          for (float[] a : dense.weights.data) {
+            for (float b : a) {
               b = Math.max(Math.min(b, 1), -1);
               int bightness = (int) ((b + 1d) * 127d);
               graphics.setColor(new Color(bightness, bightness, bightness));
@@ -266,7 +266,7 @@ public class MNIST extends JFrame {
       }
     }
     
-    void drawLine(Graphics graphics, List<Double> list, int x, int y, int width, int height, Color color) {
+    void drawLine(Graphics graphics, List<Float> list, int x, int y, int width, int height, Color color) {
       int lastX2 = -1;
       int lastY2 = -1;
       graphics.setColor(color);
@@ -274,10 +274,10 @@ public class MNIST extends JFrame {
       graphics2D.setStroke(new BasicStroke(2f));
       
       for (int i = 0; i < list.size(); i++) {
-        double element = list.get(i);
+        float element = list.get(i);
         
-        int x2 = (int) (x + (double) width / list.size() * i);
-        int y2 = (int) (y + (double) height / 1 * element);
+        int x2 = (int) (x + (float) width / list.size() * i);
+        int y2 = (int) (y + (float) height / 1 * element);
         
         if (lastX2 != -1) {
           graphics.drawLine(lastX2, lastY2, x2, y2);

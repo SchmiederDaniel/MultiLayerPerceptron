@@ -82,7 +82,7 @@ public class AutoGan extends JFrame {
     LossFunction encoderLoss = new LinearLoss();
     LossFunction decoderLoss = new LinearLoss();
     LossFunction discriminatorLoss = new BinaryCrossEntropy();
-    double learningRate = 0.1;
+    float learningRate = 0.1f;
     
     public Scene() {
       images = MnistLoader.readImages().stream().toArray(int[][]::new);
@@ -112,23 +112,23 @@ public class AutoGan extends JFrame {
         .activation.sigmoid()
         .build();
     }
-    List<Double> data1 = new ArrayList<>();
-    List<Double> data2 = new ArrayList<>();
+    List<Float> data1 = new ArrayList<>();
+    List<Float> data2 = new ArrayList<>();
     void test() {
-      double sum1 = 0;
-      double sum2 = 0;
+      float sum1 = 0;
+      float sum2 = 0;
       for (int i = 0; i < 200; i++) {
         int[] pixels = images[trainIndex];
-        double[] realData = pixelsToDouble(pixels);
+        float[] realData = pixelsToFloat(pixels);
   
-        double[] encoded = encoder.predict(NumpyArray.of(realData)).transpose().data[0];
-        double[] decoded = decoder.predict(NumpyArray.of(encoded)).transpose().data[0];
+        float[] encoded = encoder.predict(NumpyArray.of(realData)).transpose().data[0];
+        float[] decoded = decoder.predict(NumpyArray.of(encoded)).transpose().data[0];
   
         boolean order = Math.random() > 0.5d;
-        double[] combined = new double[realData.length * 2];
+        float[] combined = new float[realData.length * 2];
         System.arraycopy(order ? realData : decoded, 0, combined, 0, imageResolution * imageResolution);
         System.arraycopy(order ? decoded : realData, 0, combined, imageResolution * imageResolution, imageResolution * imageResolution);
-        double discriminated = discriminator.predict(NumpyArray.of(combined)).data[0][0];
+        float discriminated = discriminator.predict(NumpyArray.of(combined)).data[0][0];
   
         sum1 += order ? discriminated : 1 - discriminated;
   
@@ -140,8 +140,8 @@ public class AutoGan extends JFrame {
         sum2 += order ? 1 - discriminated : discriminated;
       }
   
-      data1.add(sum1 / 200d);
-      data2.add(sum2 / 200d);
+      data1.add(sum1 / 200f);
+      data2.add(sum2 / 200f);
       
       System.out.println("" + sum1 / 200d + " " + sum2 / 200d);
   
@@ -159,16 +159,16 @@ public class AutoGan extends JFrame {
       
       int[] pixels = images[trainIndex];
 //      int label = labels[trainIndex];
-      double[] realData = pixelsToDouble(pixels);
+      float[] realData = pixelsToFloat(pixels);
       
-      double[] encoded = encoder.predict(NumpyArray.of(realData)).transpose().data[0];
-      double[] decoded = decoder.predict(NumpyArray.of(encoded)).transpose().data[0];
+      float[] encoded = encoder.predict(NumpyArray.of(realData)).transpose().data[0];
+      float[] decoded = decoder.predict(NumpyArray.of(encoded)).transpose().data[0];
       
       boolean order = Math.random() > 0.5d;
-      double[] combined = new double[realData.length * 2];
+      float[] combined = new float[realData.length * 2];
       System.arraycopy(order ? realData : decoded, 0, combined, 0, imageResolution * imageResolution);
       System.arraycopy(order ? decoded : realData, 0, combined, imageResolution * imageResolution, imageResolution * imageResolution);
-      double discriminated = discriminator.predict(NumpyArray.of(combined)).data[0][0];
+      float discriminated = discriminator.predict(NumpyArray.of(combined)).data[0][0];
       
       { // train generator
         NumpyArray grad = discriminator.backwardWithoutTrain(
@@ -178,8 +178,8 @@ public class AutoGan extends JFrame {
           learningRate
         );
         
-        double[] data = grad.transpose().data[0];
-        double[] truncated = new double[imageResolution * imageResolution];
+        float[] data = grad.transpose().data[0];
+        float[] truncated = new float[imageResolution * imageResolution];
         System.arraycopy(data, order ? 0 : imageResolution * imageResolution, truncated, 0, truncated.length);
         
         grad = NumpyArray.of(truncated).multiplyScalar(-1);
@@ -204,19 +204,19 @@ public class AutoGan extends JFrame {
         discriminator.trainSingle(
           discriminatorLoss,
           combined,
-          new double[] { order ? 0 : 1 },
-          learningRate * 0.001
+          new float[] { order ? 0 : 1 },
+          learningRate * 0.001f
         );
   
         // train on reverse
-        combined = new double[decoded.length * 2];
+        combined = new float[decoded.length * 2];
         System.arraycopy(order ? decoded : realData, 0, combined, 0, imageResolution * imageResolution);
         System.arraycopy(order ? realData : decoded, 0, combined, imageResolution * imageResolution, imageResolution * imageResolution);
         discriminator.trainSingle(
           discriminatorLoss,
           combined,
-          new double[] { order ? 1 : 0 },
-          learningRate * 0.001
+          new float[] { order ? 1 : 0 },
+          learningRate * 0.001f
         );
       }
     }
@@ -239,11 +239,11 @@ public class AutoGan extends JFrame {
         return;
       
       int[] pixels = images[thinkIndex];
-      double[] encoderInput = pixelsToDouble(pixels);
-      double[] encoded = encoder.predictThreadSafe(encoderInput).transpose().data[0];
-      double[] decoded = decoder.predictThreadSafe(encoded).transpose().data[0];
+      float[] encoderInput = pixelsToFloat(pixels);
+      float[] encoded = encoder.predictThreadSafe(encoderInput).transpose().data[0];
+      float[] decoded = decoder.predictThreadSafe(encoded).transpose().data[0];
       
-      int[] decodedPixels = doubleToPixels(decoded);
+      int[] decodedPixels = floatToPixels(decoded);
       
       drawPixels(graphics, pixels, 0, 0, getWidth() / 2, getHeight() / 2);
       drawPixels(graphics, decodedPixels, getWidth() / 2, 0, getWidth() / 2, getHeight() / 2);
@@ -255,13 +255,13 @@ public class AutoGan extends JFrame {
       drawLines(graphics, data2, 0, getHeight() / 2, getWidth(), getHeight() / 2, Color.green);
     }
     
-    void drawLines(Graphics graphics, List<Double> dataList, double startX, double startY, double width, double height, Color color) {
-      double lastX = -1;
-      double lastY = -1;
+    void drawLines(Graphics graphics, List<Float> dataList, float startX, float startY, float width, float height, Color color) {
+      float lastX = -1;
+      float lastY = -1;
       graphics.setColor(color);
       for (int i = 0; i < dataList.size(); i++) {
-        double x = startX + width / dataList.size() * i;
-        double y = startY + dataList.get(i) * height;
+        float x = startX + width / dataList.size() * i;
+        float y = startY + dataList.get(i) * height;
         
         if(lastX != -1 && lastY != -1) {
           graphics.drawLine(
@@ -311,7 +311,7 @@ public class AutoGan extends JFrame {
         resized[i2] += pixels[i];
       }
       
-      double divide = (double) pixels.length / resized.length;
+      float divide = (float) pixels.length / resized.length;
       for (int i = 0; i < resized.length; i++) {
         resized[i] = (int) (resized[i] / divide);
         resized[i] = Math.min(Math.max(resized[i], 0), 255);
@@ -320,15 +320,15 @@ public class AutoGan extends JFrame {
       return resized;
     }
     
-    static double[] pixelsToDouble(int[] pixels) {
-      double[] output = new double[pixels.length];
+    static float[] pixelsToFloat(int[] pixels) {
+      float[] output = new float[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
-        output[i] = pixels[i] / 255d;
+        output[i] = pixels[i] / 255f;
       }
       return output;
     }
     
-    static int[] doubleToPixels(double[] pixels) {
+    static int[] floatToPixels(float[] pixels) {
       int[] output = new int[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
         output[i] = (int) (pixels[i] * 255d);

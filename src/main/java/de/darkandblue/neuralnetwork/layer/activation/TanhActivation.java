@@ -6,12 +6,12 @@ import de.darkandblue.neuralnetwork.math.NumpyArray;
 public class TanhActivation extends Activation {
   @Override
   public NumpyArray activation(NumpyArray input) {
-    double[][] newData = new double[input.rows()][input.cols()];
+    float[][] newData = new float[input.rows()][input.cols()];
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
-        double x = input.data[rowIndex][colIndex];
-        newData[rowIndex][colIndex] = Math.tanh(x);
+        float x = input.data[rowIndex][colIndex];
+        newData[rowIndex][colIndex] = (float) Math.tanh(x);
       }
     }
     
@@ -20,14 +20,14 @@ public class TanhActivation extends Activation {
   
   @Override
   public NumpyArray activation_prime(NumpyArray input) {
-    double[][] newData = new double[input.rows()][input.cols()];
+    float[][] newData = new float[input.rows()][input.cols()];
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
-        double x = input.data[rowIndex][colIndex];
-        x = Math.tanh(x);
+        float x = input.data[rowIndex][colIndex];
+        x = (float) Math.tanh(x);
         x *= x;
-        newData[rowIndex][colIndex] = 1d - x;
+        newData[rowIndex][colIndex] = 1f - x;
       }
     }
     

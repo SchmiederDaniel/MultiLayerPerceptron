@@ -7,15 +7,15 @@ public class LeakyReLu extends Activation {
   
   @Override
   public NumpyArray activation(NumpyArray input) {
-    double[][] newData = new double[input.rows()][input.cols()];
+    float[][] newData = new float[input.rows()][input.cols()];
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
-        double x = input.data[rowIndex][colIndex];
+        float x = input.data[rowIndex][colIndex];
         if (x > 0)
           newData[rowIndex][colIndex] = x;
         else
-          newData[rowIndex][colIndex] = x * 0.01d;
+          newData[rowIndex][colIndex] = x * 0.01f;
       }
     }
     
@@ -24,15 +24,15 @@ public class LeakyReLu extends Activation {
   
   @Override
   public NumpyArray activation_prime(NumpyArray input) {
-    double[][] newData = new double[input.rows()][input.cols()];
+    float[][] newData = new float[input.rows()][input.cols()];
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
-        double x = input.data[rowIndex][colIndex];
+        float x = input.data[rowIndex][colIndex];
         if (x > 0)
           newData[rowIndex][colIndex] = 1;
         else
-          newData[rowIndex][colIndex] = x / 0.01d;
+          newData[rowIndex][colIndex] = x / 0.01f;
       }
     }
     

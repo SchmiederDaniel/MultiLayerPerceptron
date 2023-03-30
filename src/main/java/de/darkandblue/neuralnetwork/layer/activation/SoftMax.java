@@ -14,7 +14,7 @@ public class SoftMax extends Layer {
   }
   
   @Override
-  public NumpyArray backward(NumpyArray output_gradient, double learning_rate) {
+  public NumpyArray backward(NumpyArray output_gradient, float learning_rate) {
     return output_gradient.multiplyScalar(activation_prime(output_gradient));
   }
   
@@ -24,8 +24,8 @@ public class SoftMax extends Layer {
   }
   
   public NumpyArray activation(NumpyArray input) {
-    double[][] newData = new double[input.rows()][input.cols()];
-    double sum = 0;
+    float[][] newData = new float[input.rows()][input.cols()];
+    float sum = 0;
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
         sum += Math.exp(input.data[rowIndex][colIndex]);
@@ -34,8 +34,8 @@ public class SoftMax extends Layer {
     
     for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
-        double x = input.data[rowIndex][colIndex];
-        newData[rowIndex][colIndex] = Math.exp(x) / sum;
+        float x = input.data[rowIndex][colIndex];
+        newData[rowIndex][colIndex] = (float) (Math.exp(x) / sum);
       }
     }
     
