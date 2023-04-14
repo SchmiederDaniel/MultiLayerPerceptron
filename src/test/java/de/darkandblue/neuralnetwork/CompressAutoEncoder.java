@@ -147,7 +147,7 @@ public class CompressAutoEncoder extends JFrame {
       NumpyArray grad = neuralNetworkDecoder.trainWithoutPredict(decoderLossFunction, decoderOutput, x, learningRate);
   
       // making gradient ascent on the encoder
-      grad = grad.multiplyScalar(-1);
+      grad = grad.multiply(-1);
   
       neuralNetworkEncoder.trainWithoutPredict(encoderLossFunction, encoderOutput, grad, learningRate * 0.5f);
     }

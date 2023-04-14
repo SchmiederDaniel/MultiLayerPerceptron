@@ -1,4 +1,4 @@
-package de.darkandblue.neuralnetwork.networks;
+package de.darkandblue.neuralnetwork.models;
 
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
@@ -127,7 +127,7 @@ public class GenerativeAdversarialNetwork extends JFrame {
       float[] data = grad.transpose().data[0];
       float[] truncated = new float[imageResolution * imageResolution];
       System.arraycopy(data, 0, truncated, 0, truncated.length);
-      grad = NumpyArray.of(truncated).multiplyScalar(-1);
+      grad = NumpyArray.of(truncated).multiply(-1);
       
       generator.trainWithoutPredict(
         generatorLoss,

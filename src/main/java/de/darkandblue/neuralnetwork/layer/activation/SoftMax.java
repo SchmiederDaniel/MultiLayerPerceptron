@@ -15,7 +15,7 @@ public class SoftMax extends Layer {
   
   @Override
   public NumpyArray backward(NumpyArray output_gradient, float learning_rate) {
-    return output_gradient.multiplyScalar(activation_prime(output_gradient));
+    return output_gradient.multiply(activation_prime(output_gradient));
   }
   
   @Override
@@ -45,6 +45,6 @@ public class SoftMax extends Layer {
   
   public NumpyArray activation_prime(NumpyArray output_gradient) {
     NumpyArray identity = NumpyArray.identity(output.rows() * output.cols());
-    return identity.subtract(output.transpose()).multiplyScalar(output).dot(output_gradient);
+    return identity.subtract(output.transpose()).multiply(output).dot(output_gradient);
   }
 }

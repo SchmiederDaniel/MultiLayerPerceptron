@@ -1,11 +1,10 @@
-package de.darkandblue.neuralnetwork.networks;
+package de.darkandblue.neuralnetwork.models;
 
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LinearLoss;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
-import de.darkandblue.neuralnetwork.lossfunction.MeanSquareError;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
@@ -127,7 +126,7 @@ public class GenerativeAdversarialNetwork2 extends JFrame {
         System.arraycopy(data, 0, truncated, 0, truncated.length);
         grad = NumpyArray.of(truncated);//.multiplyScalar(-1);
         if(rand == false)
-          grad = grad.multiplyScalar(-1);
+          grad = grad.multiply(-1);
         
         generator.trainWithoutPredict(
           generatorLoss,

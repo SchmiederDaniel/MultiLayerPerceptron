@@ -1,4 +1,4 @@
-package de.darkandblue.neuralnetwork.networks;
+package de.darkandblue.neuralnetwork.models;
 
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
@@ -182,7 +182,7 @@ public class AutoGan extends JFrame {
         float[] truncated = new float[imageResolution * imageResolution];
         System.arraycopy(data, order ? 0 : imageResolution * imageResolution, truncated, 0, truncated.length);
         
-        grad = NumpyArray.of(truncated).multiplyScalar(-1);
+        grad = NumpyArray.of(truncated).multiply(-1);
         
         grad = decoder.trainWithoutPredict(
           decoderLoss,
@@ -190,7 +190,7 @@ public class AutoGan extends JFrame {
           grad,
           learningRate
         );
-        grad = grad.multiplyScalar(-1);
+        grad = grad.multiply(-1);
         
         encoder.trainWithoutPredict(
           encoderLoss,

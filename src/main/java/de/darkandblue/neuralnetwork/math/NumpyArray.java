@@ -50,23 +50,23 @@ public class NumpyArray {
   Does Matrix multiplication with arrays
    */
   public NumpyArray dot(NumpyArray other) {
+    NumpyArray a = rows() < other.rows() ? this : other;
+    if(a.cols() == 1 && a.rows() == 1) { // matrix * number
+      NumpyArray b = rows() < other.rows() ? other : this;
+      float[][] newData = new float[b.rows()][b.cols()];
+      for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
+        for (int rowIndex = 0; rowIndex < b.rows(); rowIndex++) {
+          newData[rowIndex][colIndex] = a.data[0][0] * b.data[rowIndex][colIndex];
+        }
+      }
+      return new NumpyArray(newData);
+    }
+  
     if (cols() != other.rows()) {
       throw new RuntimeException("Columns doesn't match rows " + cols() + ", " + other.rows());
     }
+    // Matrix multiplication (matrix * matrix)
     float[][] newData = new float[rows()][other.cols()];
-    
-    // slow
-//    for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
-//      for (int colIndex = 0; colIndex < other.cols(); colIndex++) {
-//        float sum = 0;
-//        for (int otherColIndex = 0; otherColIndex < cols(); otherColIndex++) {
-//          sum += data[rowIndex][otherColIndex] * other.data[otherColIndex][colIndex];
-//        }
-//        newData[rowIndex][colIndex] = sum;
-//      }
-//    }
-    
-    // fast
     for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
       for (int otherColIndex = 0; otherColIndex < cols(); otherColIndex++) {
         for (int colIndex = 0; colIndex < other.cols(); colIndex++) {
@@ -74,7 +74,6 @@ public class NumpyArray {
         }
       }
     }
-    
     return new NumpyArray(newData);
   }
   
@@ -131,7 +130,7 @@ public class NumpyArray {
   }
   
   public NumpyArray subtract(NumpyArray other) {
-    // determines if the subtraction needs to be reversed later on
+    // reverse when other has more rows (is a matrix)
     boolean reversed = !(rows() < other.rows());
     NumpyArray a = rows() < other.rows() ? this : other;
     NumpyArray b = rows() < other.rows() ? other : this;
@@ -193,7 +192,7 @@ public class NumpyArray {
     return new NumpyArray(newData);
   }
   
-  public NumpyArray multiplyScalar(float other) {
+  public NumpyArray multiply(float other) {
     float[][] newData = new float[rows()][cols()];
     for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < cols(); colIndex++) {
@@ -237,10 +236,68 @@ public class NumpyArray {
     return new NumpyArray(newData);
   }
   
+  
   /*
-  Copies the array * array feature of Numpy
+  Represents the array * array feature of Numpy
    */
-  public NumpyArray multiplyScalar(NumpyArray other) {
+  public NumpyArray multiply(NumpyArray other) {
+    NumpyArray a = rows() < other.rows() ? this : other;
+    NumpyArray b = rows() < other.rows() ? other : this;
+  
+    if (a.cols() == 1 && a.rows() == 1) {
+      float[][] newData = new float[b.rows()][b.cols()];
+      for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
+        for (int rowIndex = 0; rowIndex < b.rows(); rowIndex++) {
+          newData[rowIndex][colIndex] = a.data[0][0] * b.data[rowIndex][colIndex];
+        }
+      }
+    
+      return new NumpyArray(newData);
+    }
+  
+    if (a.rows() == 1 && a.rows() == b.rows()) {
+      float[][] newData = new float[b.rows()][b.cols()];
+      for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
+        for (int rowIndex = 0; rowIndex < b.rows(); rowIndex++) {
+          newData[rowIndex][colIndex] = a.data[0][colIndex] * b.data[rowIndex][colIndex];
+        }
+      }
+    
+      return new NumpyArray(newData);
+    }
+  
+    // Matrix scalar multiplication matrix[x][y] * matrix[x][y]
+    if (a.rows() == b.rows() && a.cols() == b.cols()) {
+      float[][] newData = new float[rows()][cols()];
+      for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
+        for (int colIndex = 0; colIndex < cols(); colIndex++) {
+          newData[rowIndex][colIndex] = a.data[rowIndex][colIndex] * b.data[rowIndex][colIndex];
+        }
+      }
+    
+      return new NumpyArray(newData);
+    }
+  
+    if (a.rows() == b.rows()) {
+      a = cols() < other.cols() ? this : other;
+      b = cols() < other.cols() ? other : this;
+      
+      if (a.cols() == 1) {
+        float[][] newData = new float[rows()][b.cols()];
+        for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
+          for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
+            newData[rowIndex][colIndex] = b.data[rowIndex][colIndex] * a.data[rowIndex][0];
+          }
+        }
+        
+        return new NumpyArray(newData);
+      }
+    }
+    
+    throw new RuntimeException("One array must be in the dimension of [1][x] or the same dimension of the second array " + a.dimension() + ", " + b.dimension());
+  }
+  
+  public NumpyArray divide(NumpyArray other) {
     NumpyArray a = rows() < other.rows() ? this : other;
     NumpyArray b = rows() < other.rows() ? other : this;
     
@@ -248,7 +305,7 @@ public class NumpyArray {
       float[][] newData = new float[b.rows()][b.cols()];
       for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
         for (int rowIndex = 0; rowIndex < b.rows(); rowIndex++) {
-          newData[rowIndex][colIndex] = a.data[0][0] * b.data[rowIndex][colIndex];
+          newData[rowIndex][colIndex] = a.data[0][0] / b.data[rowIndex][colIndex];
         }
       }
       
@@ -259,18 +316,19 @@ public class NumpyArray {
       float[][] newData = new float[b.rows()][b.cols()];
       for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
         for (int rowIndex = 0; rowIndex < b.rows(); rowIndex++) {
-          newData[rowIndex][colIndex] = a.data[0][colIndex] * b.data[rowIndex][colIndex];
+          newData[rowIndex][colIndex] = a.data[0][colIndex] / b.data[rowIndex][colIndex];
         }
       }
       
       return new NumpyArray(newData);
     }
     
+    // Matrix scalar multiplication matrix[x][y] * matrix[x][y]
     if (a.rows() == b.rows() && a.cols() == b.cols()) {
       float[][] newData = new float[rows()][cols()];
       for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
         for (int colIndex = 0; colIndex < cols(); colIndex++) {
-          newData[rowIndex][colIndex] = a.data[rowIndex][colIndex] * b.data[rowIndex][colIndex];
+          newData[rowIndex][colIndex] = a.data[rowIndex][colIndex] / b.data[rowIndex][colIndex];
         }
       }
       
@@ -285,7 +343,7 @@ public class NumpyArray {
         float[][] newData = new float[rows()][b.cols()];
         for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
           for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
-            newData[rowIndex][colIndex] = b.data[rowIndex][colIndex] * a.data[rowIndex][0];
+            newData[rowIndex][colIndex] = b.data[rowIndex][colIndex] / a.data[rowIndex][0];
           }
         }
         

@@ -23,7 +23,7 @@ public abstract class Activation extends Layer {
   
   @Override
   public NumpyArray backward(NumpyArray output_gradient, float learning_rate) {
-    return output_gradient.multiplyScalar(activation_prime(input));
+    return output_gradient.multiply(activation_prime(input));
   }
   
   public abstract NumpyArray activation_prime(NumpyArray input);

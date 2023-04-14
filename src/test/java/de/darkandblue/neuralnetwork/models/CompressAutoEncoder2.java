@@ -1,8 +1,7 @@
-package de.darkandblue.neuralnetwork.networks;
+package de.darkandblue.neuralnetwork.models;
 
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
-import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LinearLoss;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
@@ -155,7 +154,7 @@ public class CompressAutoEncoder2 extends JFrame {
       NumpyArray grad = neuralNetworkDecoder.trainWithoutPredict(decoderLossFunction, decoderOutput, x, learningRate);
   
       // making gradient ascent on the encoder
-      grad = grad.multiplyScalar(-1);
+      grad = grad.multiply(-1);
   
       neuralNetworkEncoder.trainWithoutPredict(encoderLossFunction, encoderOutput, grad, learningRate * 0.5f);
     }

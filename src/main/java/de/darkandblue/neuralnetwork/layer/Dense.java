@@ -40,8 +40,8 @@ public class Dense extends Layer {
     // TODO: dimension output_gradient = (1, 1)
     NumpyArray weights_gradient = output_gradient.dot(input.transpose());
     NumpyArray input_gradient = weights.transpose().dot(output_gradient);
-    weights = weights.subtract(weights_gradient.multiplyScalar(learning_rate));
-    bias = bias.subtract(output_gradient.multiplyScalar(learning_rate)); // idk if activation is a vector or matrix
+    weights = weights.subtract(weights_gradient.multiply(learning_rate));
+    bias = bias.subtract(output_gradient.multiply(learning_rate)); // idk if activation is a vector or matrix
     return input_gradient;
   }
   

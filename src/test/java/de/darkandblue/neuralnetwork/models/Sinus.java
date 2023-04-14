@@ -1,12 +1,9 @@
-package de.darkandblue.neuralnetwork.tests;
+package de.darkandblue.neuralnetwork.models;
 
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
-import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
-import de.darkandblue.neuralnetwork.lossfunction.LinearLoss;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
 import de.darkandblue.neuralnetwork.lossfunction.MeanSquareError;
-import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 import javax.swing.*;
 import java.awt.*;
