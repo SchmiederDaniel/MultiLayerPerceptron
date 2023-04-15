@@ -3,7 +3,7 @@ package de.darkandblue.neuralnetwork.layer.activation;
 import de.darkandblue.neuralnetwork.layer.Layer;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
-public class TanhActivation extends Activation {
+public class Tanh extends Activation {
   @Override
   public NumpyArray activation(NumpyArray input) {
     float[][] newData = new float[input.rows()][input.cols()];
@@ -36,6 +36,6 @@ public class TanhActivation extends Activation {
   
   @Override
   public Layer deepCopy() {
-    return new TanhActivation();
+    return new Tanh();
   }
 }

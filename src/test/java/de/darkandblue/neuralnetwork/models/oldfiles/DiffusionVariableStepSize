@@ -130,7 +130,7 @@ public class Diffusion extends JFrame {
     static final int MAX_STEP_VARIANCE = 4;
     
     static float learningRate = 0.15;
-    LossFunction lossFunction = new LinearLoss();
+    LossFunction lossFunction = new AbsoluteLoss();
     NeuralNetwork neuralNetwork = new NetworkBuilder()
       .layer.dense(imageResolution * imageResolution + MAX_STEP_VARIANCE + 10, 80)
       .activation.sigmoid()

@@ -90,7 +90,7 @@ public class Diffusion extends JFrame {
     private static final int STEP_INDEX_COUNT = 10;
     private static final int MAX_STEP_SIZE = 800;
     static float learningRate = 0.05f;
-    LossFunction lossFunction = new LinearLoss();
+    LossFunction lossFunction = new AbsoluteLoss();
     static NeuralNetwork neuralNetwork = new NetworkBuilder()
       .distribution.customDistribution(0.01f, 0.05f, -0.52f, 0.52f)
       .layer.dense(imageResolution * imageResolution + STEP_INDEX_COUNT, 140)

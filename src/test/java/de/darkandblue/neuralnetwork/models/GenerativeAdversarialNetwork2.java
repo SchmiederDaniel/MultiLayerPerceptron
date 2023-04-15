@@ -3,7 +3,7 @@ package de.darkandblue.neuralnetwork.models;
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
-import de.darkandblue.neuralnetwork.lossfunction.LinearLoss;
+import de.darkandblue.neuralnetwork.lossfunction.AbsoluteLoss;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
@@ -71,7 +71,7 @@ public class GenerativeAdversarialNetwork2 extends JFrame {
     int[][] images;
     int[] labels;
     int noiseCount = 64;
-    LossFunction generatorLoss = new LinearLoss();
+    LossFunction generatorLoss = new AbsoluteLoss();
     LossFunction discriminatorLoss = new BinaryCrossEntropy();
     float learningRate = 0.01f;
     

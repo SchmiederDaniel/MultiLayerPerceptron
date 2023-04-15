@@ -2,7 +2,7 @@ package de.darkandblue.neuralnetwork.models;
 
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
-import de.darkandblue.neuralnetwork.lossfunction.LinearLoss;
+import de.darkandblue.neuralnetwork.lossfunction.AbsoluteLoss;
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
@@ -79,8 +79,8 @@ public class AutoGan extends JFrame {
     int imageResolution = 28;
     int[][] images;
     int[] labels;
-    LossFunction encoderLoss = new LinearLoss();
-    LossFunction decoderLoss = new LinearLoss();
+    LossFunction encoderLoss = new AbsoluteLoss();
+    LossFunction decoderLoss = new AbsoluteLoss();
     LossFunction discriminatorLoss = new BinaryCrossEntropy();
     float learningRate = 0.1f;
     

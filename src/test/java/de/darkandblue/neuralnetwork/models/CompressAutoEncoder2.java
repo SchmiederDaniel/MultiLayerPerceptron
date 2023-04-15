@@ -2,7 +2,7 @@ package de.darkandblue.neuralnetwork.models;
 
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
-import de.darkandblue.neuralnetwork.lossfunction.LinearLoss;
+import de.darkandblue.neuralnetwork.lossfunction.AbsoluteLoss;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
@@ -76,8 +76,8 @@ public class CompressAutoEncoder2 extends JFrame {
       .layer.dense(80, 784)
       .activation.sigmoid()
       .build();
-    private final static LossFunction decoderLossFunction = new LinearLoss();
-    private final static LossFunction encoderLossFunction = new LinearLoss();
+    private final static LossFunction decoderLossFunction = new AbsoluteLoss();
+    private final static LossFunction encoderLossFunction = new AbsoluteLoss();
     
     // TODO: wouldn't it be usefull if the loss function of an image gets determined by how much a number looks like a number? 
     // a algorithm would be usefull which compares the generated image and how it deviates from pixels near by from the original

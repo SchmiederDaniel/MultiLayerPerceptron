@@ -2,7 +2,7 @@ package de.darkandblue.neuralnetwork.lossfunction;
 
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
-public class LinearLoss implements LossFunction {
+public class AbsoluteLoss implements LossFunction {
   // basic loss function where the error is y_pred - y_true
   @Override
   public float loss(NumpyArray y_true, NumpyArray y_pred) {

@@ -49,7 +49,7 @@ public class NetworkBuilder {
     }
     
     public NetworkBuilder sigmoid() {
-      layerList.add(new SigmoidActivation());
+      layerList.add(new Sigmoid());
       return networkBuilder;
     }
     
@@ -59,7 +59,7 @@ public class NetworkBuilder {
     }
     
     public NetworkBuilder tanh() {
-      layerList.add(new TanhActivation());
+      layerList.add(new Tanh());
       return networkBuilder;
     }
     

@@ -3,12 +3,12 @@ package de.darkandblue.neuralnetwork.layer.activation;
 import de.darkandblue.neuralnetwork.layer.Layer;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
-public class SigmoidActivation extends Activation {
-  public SigmoidActivation(NumpyArray copyInput) {
+public class Sigmoid extends Activation {
+  public Sigmoid(NumpyArray copyInput) {
     super(copyInput);
   }
   
-  public SigmoidActivation() {
+  public Sigmoid() {
   }
   
   @Override
@@ -44,11 +44,11 @@ public class SigmoidActivation extends Activation {
   
   @Override
   public Layer deepCopy() {
-    return new SigmoidActivation(this.input.copy());
+    return new Sigmoid(this.input.copy());
   }
   
   @Override
   public String toString() {
-    return "SigmoidActivation";
+    return "Sigmoid";
   }
 }
