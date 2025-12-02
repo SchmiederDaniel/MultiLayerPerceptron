@@ -151,12 +151,12 @@ public class CompressAutoEncoder2 extends JFrame {
       NumpyArray encoderOutput = neuralNetworkEncoder.predict(NumpyArray.of(x));
       NumpyArray decoderOutput = neuralNetworkDecoder.predict(encoderOutput);
   
-      NumpyArray grad = neuralNetworkDecoder.trainWithoutPredict(decoderLossFunction, decoderOutput, x, learningRate);
+      NumpyArray grad = neuralNetworkDecoder.backwardWithoutTrain(decoderLossFunction, decoderOutput, NumpyArray.of(x), learningRate);
   
       // making gradient ascent on the encoder
       grad = grad.multiply(-1);
   
-      neuralNetworkEncoder.trainWithoutPredict(encoderLossFunction, encoderOutput, grad, learningRate * 0.5f);
+      neuralNetworkEncoder.backwardWithoutTrain(encoderLossFunction, encoderOutput, grad, learningRate * 0.5f);
     }
     
     float[] pixelsTofloat(int[] pixels) {
