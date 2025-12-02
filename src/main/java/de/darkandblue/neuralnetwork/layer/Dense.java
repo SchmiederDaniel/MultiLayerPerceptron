@@ -11,8 +11,11 @@ public class Dense extends Layer {
     weights = new NumpyArray(output_size, input_size);
     bias = new NumpyArray(output_size, 1);
     
-    weights.randomize(distribution.weightsFrom(), distribution.weightsTo());
-    bias.randomize(distribution.biasFrom(), distribution.biasTo());
+    distribution.setInputSize(input_size);
+    distribution.setOutputSize(output_size);
+    
+    weights = weights.forAll(distribution::randomWeight);
+    bias = bias.forAll(distribution::randomBias);
   }
   
   public Dense(NumpyArray weights, NumpyArray bias, NumpyArray inputCopy) {
@@ -47,16 +50,14 @@ public class Dense extends Layer {
   
   @Override
   public Layer deepCopy() {
-    return new Dense(weights.copy(), bias.copy(), input.copy());
+    if (input == null)
+      return new Dense(weights.copy(), bias.copy(), null);
+    else
+      return new Dense(weights.copy(), bias.copy(), input.copy());
   }
   
   @Override
   public String toString() {
     return "Dense " + weights.dimension() + " " + bias.dimension();
   }
-  
-//  @Override
-//  public String toString() {
-//    return "Dense " + weights + " " + bias;
-//  }
 }

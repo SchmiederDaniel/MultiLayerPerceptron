@@ -47,13 +47,13 @@ public class AutoGan extends JFrame {
         }
       }
     }).start();
-  
+    
     new Thread(() -> {
       while (true) {
         scene.train();
       }
     }).start();
-  
+    
     new Thread(() -> {
       while (true) {
         scene.test();
@@ -92,66 +92,69 @@ public class AutoGan extends JFrame {
       labels = MnistLoader.readLabels().stream().mapToInt(i -> i).toArray();
       
       encoder = new NetworkBuilder()
-        .layer.dense(imageResolution * imageResolution, 60)
-        .activation.sigmoid()
-        .layer.dense(60, 60)
-        .activation.sigmoid()
-        .build();
+          .layer.dense(imageResolution * imageResolution, 60)
+          .activation.sigmoid()
+          .layer.dense(60, 60)
+          .activation.sigmoid()
+          .build();
       
       decoder = new NetworkBuilder()
-        .layer.dense(60, 60)
-        .activation.sigmoid()
-        .layer.dense(60, imageResolution * imageResolution)
-        .activation.sigmoid()
-        .build();
+          .layer.dense(60, 60)
+          .activation.sigmoid()
+          .layer.dense(60, imageResolution * imageResolution)
+          .activation.sigmoid()
+          .build();
       
       discriminator = new NetworkBuilder()
-        .layer.dense(imageResolution * imageResolution + imageResolution * imageResolution, 50)
-        .activation.sigmoid()
-        .layer.dense(50, 1)
-        .activation.sigmoid()
-        .build();
+          .layer.dense(imageResolution * imageResolution + imageResolution * imageResolution, 50)
+          .activation.sigmoid()
+          .layer.dense(50, 1)
+          .activation.sigmoid()
+          .build();
     }
+    
     List<Float> data1 = new ArrayList<>();
     List<Float> data2 = new ArrayList<>();
+    
     void test() {
       float sum1 = 0;
       float sum2 = 0;
       for (int i = 0; i < 200; i++) {
         int[] pixels = images[trainIndex];
         float[] realData = pixelsToFloat(pixels);
-  
+        
         float[] encoded = encoder.predict(NumpyArray.of(realData)).transpose().data[0];
         float[] decoded = decoder.predict(NumpyArray.of(encoded)).transpose().data[0];
-  
+        
         boolean order = Math.random() > 0.5d;
         float[] combined = new float[realData.length * 2];
         System.arraycopy(order ? realData : decoded, 0, combined, 0, imageResolution * imageResolution);
         System.arraycopy(order ? decoded : realData, 0, combined, imageResolution * imageResolution, imageResolution * imageResolution);
         float discriminated = discriminator.predict(NumpyArray.of(combined)).data[0][0];
-  
+        
         sum1 += order ? discriminated : 1 - discriminated;
-  
+        
         order = !order;
         System.arraycopy(order ? realData : decoded, 0, combined, 0, imageResolution * imageResolution);
         System.arraycopy(order ? decoded : realData, 0, combined, imageResolution * imageResolution, imageResolution * imageResolution);
         discriminated = discriminator.predict(NumpyArray.of(combined)).data[0][0];
-  
+        
         sum2 += order ? 1 - discriminated : discriminated;
       }
-  
+      
       data1.add(sum1 / 200f);
       data2.add(sum2 / 200f);
       
       System.out.println("" + sum1 / 200d + " " + sum2 / 200d);
-  
-      if(data1.size() > 400)
+      
+      if (data1.size() > 400)
         data1.remove(0);
-      if(data2.size() > 400)
+      if (data2.size() > 400)
         data2.remove(0);
     }
     
     int trainIndex;
+    
     public void train() {
       trainIndex++;
       if (trainIndex >= images.length)
@@ -172,10 +175,10 @@ public class AutoGan extends JFrame {
       
       { // train generator
         NumpyArray grad = discriminator.backwardWithoutTrain(
-          discriminatorLoss,
-          NumpyArray.of(discriminated),
-          NumpyArray.of(order ? 0 : 1),
-          learningRate
+            discriminatorLoss,
+            NumpyArray.of(discriminated),
+            NumpyArray.of(order ? 0 : 1),
+            learningRate
         );
         
         float[] data = grad.transpose().data[0];
@@ -184,39 +187,39 @@ public class AutoGan extends JFrame {
         
         grad = NumpyArray.of(truncated).multiply(-1);
         
-        grad = decoder.trainWithoutPredict(
-          decoderLoss,
-          NumpyArray.of(decoded),
-          grad,
-          learningRate
+        grad = decoder.backpropagaton(
+            decoderLoss,
+            NumpyArray.of(decoded),
+            grad,
+            learningRate
         );
         grad = grad.multiply(-1);
         
-        encoder.trainWithoutPredict(
-          encoderLoss,
-          NumpyArray.of(encoded),
-          grad,
-          learningRate
+        encoder.backpropagaton(
+            encoderLoss,
+            NumpyArray.of(encoded),
+            grad,
+            learningRate
         );
       }
       
       { // train discriminator
         discriminator.trainSingle(
-          discriminatorLoss,
-          combined,
-          new float[] { order ? 0 : 1 },
-          learningRate * 0.001f
+            discriminatorLoss,
+            combined,
+            new float[]{order ? 0 : 1},
+            learningRate * 0.001f
         );
-  
+        
         // train on reverse
         combined = new float[decoded.length * 2];
         System.arraycopy(order ? decoded : realData, 0, combined, 0, imageResolution * imageResolution);
         System.arraycopy(order ? realData : decoded, 0, combined, imageResolution * imageResolution, imageResolution * imageResolution);
         discriminator.trainSingle(
-          discriminatorLoss,
-          combined,
-          new float[] { order ? 1 : 0 },
-          learningRate * 0.001f
+            discriminatorLoss,
+            combined,
+            new float[]{order ? 1 : 0},
+            learningRate * 0.001f
         );
       }
     }
@@ -247,10 +250,10 @@ public class AutoGan extends JFrame {
       
       drawPixels(graphics, pixels, 0, 0, getWidth() / 2, getHeight() / 2);
       drawPixels(graphics, decodedPixels, getWidth() / 2, 0, getWidth() / 2, getHeight() / 2);
-  
+      
       Graphics2D graphics2D = (Graphics2D) graphics;
       graphics2D.setStroke(new BasicStroke(2f));
-  
+      
       drawLines(graphics, data1, 0, getHeight() / 2, getWidth(), getHeight() / 2, Color.red);
       drawLines(graphics, data2, 0, getHeight() / 2, getWidth(), getHeight() / 2, Color.green);
     }
@@ -263,12 +266,12 @@ public class AutoGan extends JFrame {
         float x = startX + width / dataList.size() * i;
         float y = startY + dataList.get(i) * height;
         
-        if(lastX != -1 && lastY != -1) {
+        if (lastX != -1 && lastY != -1) {
           graphics.drawLine(
-            (int) x,
-            (int) y,
-            (int) lastX,
-            (int) lastY
+              (int) x,
+              (int) y,
+              (int) lastX,
+              (int) lastY
           );
         }
         
@@ -283,17 +286,17 @@ public class AutoGan extends JFrame {
       for (int i = 0; i < imageResolution * imageResolution; i++) {
         int brightness = pixels[i];
         bufferedImage.setRGB(
-          i % imageResolution,
-          i / imageResolution,
-          new Color(brightness, brightness, brightness).getRGB()
+            i % imageResolution,
+            i / imageResolution,
+            new Color(brightness, brightness, brightness).getRGB()
         );
       }
       
       graphics.drawImage(
-        bufferedImage,
-        x, y,
-        width, height,
-        null
+          bufferedImage,
+          x, y,
+          width, height,
+          null
       );
     }
     

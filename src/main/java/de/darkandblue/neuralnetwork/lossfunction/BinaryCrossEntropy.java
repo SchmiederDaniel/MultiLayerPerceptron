@@ -15,7 +15,7 @@ public class BinaryCrossEntropy implements LossFunction {
     for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
         sum += -y_true.data[rowIndex][colIndex] * Math.log(y_pred.data[rowIndex][colIndex])
-          - (1 - y_true.data[rowIndex][colIndex]) * Math.log(1 - y_pred.data[rowIndex][colIndex]);
+            - (1 - y_true.data[rowIndex][colIndex]) * Math.log(1 - y_pred.data[rowIndex][colIndex]);
       }
     }
     return sum / (y_true.rows() * y_pred.cols());
@@ -32,7 +32,7 @@ public class BinaryCrossEntropy implements LossFunction {
     for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
       for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
         newData[rowIndex][colIndex] = ((1f - y_true.data[rowIndex][colIndex]) / (1f - y_pred.data[rowIndex][colIndex])
-          - y_true.data[rowIndex][colIndex] / y_pred.data[rowIndex][colIndex]) / (y_true.rows() * y_true.cols());
+            - y_true.data[rowIndex][colIndex] / y_pred.data[rowIndex][colIndex]) / (y_true.rows() * y_true.cols());
       }
     }
     return new NumpyArray(newData);

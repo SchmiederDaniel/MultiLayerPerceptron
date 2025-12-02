@@ -44,7 +44,10 @@ public class Sigmoid extends Activation {
   
   @Override
   public Layer deepCopy() {
-    return new Sigmoid(this.input.copy());
+    if (this.input == null)
+      return new Sigmoid(null);
+    else
+      return new Sigmoid(this.input.copy());
   }
   
   @Override

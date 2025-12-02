@@ -1,5 +1,7 @@
 package de.darkandblue.neuralnetwork.math;
 
+import de.darkandblue.neuralnetwork.initialization.WeightInitializer;
+
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -51,7 +53,7 @@ public class NumpyArray {
    */
   public NumpyArray dot(NumpyArray other) {
     NumpyArray a = rows() < other.rows() ? this : other;
-    if(a.cols() == 1 && a.rows() == 1) { // matrix * number
+    if (a.cols() == 1 && a.rows() == 1) { // matrix * number
       NumpyArray b = rows() < other.rows() ? other : this;
       float[][] newData = new float[b.rows()][b.cols()];
       for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
@@ -61,7 +63,7 @@ public class NumpyArray {
       }
       return new NumpyArray(newData);
     }
-  
+    
     if (cols() != other.rows()) {
       throw new RuntimeException("Columns doesn't match rows " + cols() + ", " + other.rows());
     }
@@ -243,7 +245,7 @@ public class NumpyArray {
   public NumpyArray multiply(NumpyArray other) {
     NumpyArray a = rows() < other.rows() ? this : other;
     NumpyArray b = rows() < other.rows() ? other : this;
-  
+    
     if (a.cols() == 1 && a.rows() == 1) {
       float[][] newData = new float[b.rows()][b.cols()];
       for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
@@ -251,10 +253,10 @@ public class NumpyArray {
           newData[rowIndex][colIndex] = a.data[0][0] * b.data[rowIndex][colIndex];
         }
       }
-    
+      
       return new NumpyArray(newData);
     }
-  
+    
     if (a.rows() == 1 && a.rows() == b.rows()) {
       float[][] newData = new float[b.rows()][b.cols()];
       for (int colIndex = 0; colIndex < b.cols(); colIndex++) {
@@ -262,10 +264,10 @@ public class NumpyArray {
           newData[rowIndex][colIndex] = a.data[0][colIndex] * b.data[rowIndex][colIndex];
         }
       }
-    
+      
       return new NumpyArray(newData);
     }
-  
+    
     // Matrix scalar multiplication matrix[x][y] * matrix[x][y]
     if (a.rows() == b.rows() && a.cols() == b.cols()) {
       float[][] newData = new float[rows()][cols()];
@@ -274,10 +276,10 @@ public class NumpyArray {
           newData[rowIndex][colIndex] = a.data[rowIndex][colIndex] * b.data[rowIndex][colIndex];
         }
       }
-    
+      
       return new NumpyArray(newData);
     }
-  
+    
     if (a.rows() == b.rows()) {
       a = cols() < other.cols() ? this : other;
       b = cols() < other.cols() ? other : this;
@@ -364,6 +366,36 @@ public class NumpyArray {
     return this;
   }
   
+  public NumpyArray flatten() {
+    int cols = cols();
+    int total = rows() * cols;
+    NumpyArray flat = new NumpyArray(total, 1);
+    for (int i = 0; i < rows(); i++)
+      for (int j = 0; j < cols; j++)
+        flat.data[i * cols + j][0] = data[i][j];
+    return flat;
+  }
+  
+  public float[] flattenArray() {
+    float[] flat = new float[rows() * cols()];
+    for (int i = 0; i < rows(); i++)
+      for (int j = 0; j < cols(); j++)
+        flat[i * cols() + j] = data[i][j];
+    return flat;
+  }
+  
+  public NumpyArray reshape(int newRows, int newCols) {
+    int cols = cols();
+    if (newRows * newCols != rows() * cols)
+      throw new IllegalArgumentException("Invalid reshape dimensions");
+    NumpyArray reshaped = new NumpyArray(newRows, newCols);
+    for (int i = 0; i < newRows * newCols; i++) {
+      reshaped.data[i / newCols][i % newCols] = data[i / cols][i % cols];
+    }
+    return reshaped;
+  }
+  
+  
   @Override
   public String toString() {
 //    String output = "[";
@@ -384,6 +416,17 @@ public class NumpyArray {
   
   public NumpyArray copy() {
     float[][] newData = Arrays.stream(data).map(float[]::clone).toArray(float[][]::new);
+    return new NumpyArray(newData);
+  }
+  
+  public NumpyArray forAll(WeightInitializer supplier) {
+    float[][] newData = new float[rows()][cols()];
+    for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
+      for (int colIndex = 0; colIndex < cols(); colIndex++) {
+        Float value = supplier.get();
+        newData[rowIndex][colIndex] = value;
+      }
+    }
     return new NumpyArray(newData);
   }
 }

@@ -92,14 +92,14 @@ public class Diffusion extends JFrame {
     static float learningRate = 0.05f;
     LossFunction lossFunction = new AbsoluteLoss();
     static NeuralNetwork neuralNetwork = new NetworkBuilder()
-      .distribution.customDistribution(0.01f, 0.05f, -0.52f, 0.52f)
-      .layer.dense(imageResolution * imageResolution + STEP_INDEX_COUNT, 140)
-      .activation.sigmoid()
-      .layer.dense(140, 140)
-      .activation.sigmoid()
-      .layer.dense(140, imageResolution * imageResolution)
-      .activation.sigmoid()
-      .build();
+        .distribution.xavier(true)
+        .layer.dense(imageResolution * imageResolution + STEP_INDEX_COUNT, 140)
+        .activation.sigmoid()
+        .layer.dense(140, 140)
+        .activation.sigmoid()
+        .layer.dense(140, imageResolution * imageResolution)
+        .activation.sigmoid()
+        .build();
     static float thinkStepSize = 1f; // 0.5d = best
     
     public Scene() {
@@ -246,12 +246,12 @@ public class Diffusion extends JFrame {
           int x = counter % 5;
           int y = counter / 5;
           drawPixels(
-            graphics,
-            decodedPixels,
-            (int) (imageSize * x),
-            (int) (imageSize * y),
-            (int) imageSize,
-            (int) imageSize
+              graphics,
+              decodedPixels,
+              (int) (imageSize * x),
+              (int) (imageSize * y),
+              (int) imageSize,
+              (int) imageSize
           );
           imageCounter = (float) i2 / sliderViewSteps.getValue() * 20f;
           counter++;
@@ -288,17 +288,17 @@ public class Diffusion extends JFrame {
       for (int i = 0; i < imageResolution * imageResolution; i++) {
         int brightness = Math.max(Math.min(pixels[i], 255), 0);
         bufferedImage.setRGB(
-          i % imageResolution,
-          i / imageResolution,
-          new Color(brightness, brightness, brightness).getRGB()
+            i % imageResolution,
+            i / imageResolution,
+            new Color(brightness, brightness, brightness).getRGB()
         );
       }
       
       graphics.drawImage(
-        bufferedImage,
-        x, y,
-        width, height,
-        null
+          bufferedImage,
+          x, y,
+          width, height,
+          null
       );
     }
     

@@ -128,7 +128,7 @@ public class GenerativeAdversarialNetwork2 extends JFrame {
         if(rand == false)
           grad = grad.multiply(-1);
         
-        generator.trainWithoutPredict(
+        generator.backpropagaton(
           generatorLoss,
           NumpyArray.of(generatedData),
           grad,

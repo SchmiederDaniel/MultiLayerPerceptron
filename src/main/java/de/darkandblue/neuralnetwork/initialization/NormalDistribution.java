@@ -1,5 +1,7 @@
 package de.darkandblue.neuralnetwork.initialization;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class NormalDistribution extends Distribution {
   @Override
   public float biasFrom() {
@@ -12,12 +14,22 @@ public class NormalDistribution extends Distribution {
   }
   
   @Override
-  public float weightsFrom() {
-    return -1;
+  public float randomWeight() {
+    return ThreadLocalRandom.current().nextFloat(-1, 1);
   }
   
   @Override
-  public float weightsTo() {
-    return 1;
+  public float randomBias() {
+    return ThreadLocalRandom.current().nextFloat(-1, 1);
+  }
+  
+  @Override
+  public void setInputSize(int inputSize) {
+    
+  }
+  
+  @Override
+  public void setOutputSize(int outputSize) {
+    
   }
 }

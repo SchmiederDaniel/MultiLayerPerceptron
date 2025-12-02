@@ -2,6 +2,7 @@ package de.darkandblue.neuralnetwork.models;
 
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
+import de.darkandblue.neuralnetwork.lossfunction.AbsoluteLoss;
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
 import de.darkandblue.neuralnetwork.lossfunction.MeanSquareError;
@@ -16,24 +17,24 @@ public class GenerativeAdversarialNetwork extends JFrame {
   public static void main(String[] args) {
     new GenerativeAdversarialNetwork();
   }
-  
+
   Scene scene;
-  
+
   public GenerativeAdversarialNetwork() {
     setTitle("GenerativeAdversarialNetwork");
-    
+
     scene = new Scene();
     add(scene);
-    
-    setSize(1000, 500);
+
+    setSize(600, 300);
     setVisible(true);
     setLocationRelativeTo(null);
-    
+
     setDefaultCloseOperation(EXIT_ON_CLOSE);
-    
+
     startAsyncThreads();
   }
-  
+
   void startAsyncThreads() {
     new Thread(() -> {
       while (true) {
@@ -45,13 +46,13 @@ public class GenerativeAdversarialNetwork extends JFrame {
         }
       }
     }).start();
-    
+
     new Thread(() -> {
       while (true) {
         scene.train();
       }
     }).start();
-    
+
     new Thread(() -> {
       while (true) {
         scene.repaint();
@@ -63,79 +64,92 @@ public class GenerativeAdversarialNetwork extends JFrame {
       }
     }).start();
   }
-  
+
   class Scene extends JPanel {
     NeuralNetwork discriminator;
     NeuralNetwork generator;
     int imageResolution = 28;
     int[][] images;
     int[] labels;
-    int noiseCount = 64;
-    LossFunction generatorLoss = new MeanSquareError();
+    int noiseCount = 10;
+    LossFunction generatorLoss = new AbsoluteLoss();
     LossFunction discriminatorLoss = new BinaryCrossEntropy();
-    float learningRate = 0.2f;
-    
+    float learningRate = 0.05f;
+
     public Scene() {
       images = MnistLoader.readImages().stream().toArray(int[][]::new);
       if (imageResolution != 28)
         for (int i = 0; i < images.length; i++)
           images[i] = downScale(images[i], imageResolution);
       labels = MnistLoader.readLabels().stream().mapToInt(i -> i).toArray();
-      
+
       generator = new NetworkBuilder()
-        .layer.dense(noiseCount + 10, 256)
-        .activation.sigmoid()
-        .layer.dense(256, imageResolution * imageResolution)
-        .activation.sigmoid()
-        .build();
-      
+          .distribution.xavier()
+          .layer.dense(noiseCount + 10, 50)
+          .activation.sigmoid()
+          .layer.dropOut(0.25f)
+          .layer.dense(50, 150)
+          .activation.sigmoid()
+          .layer.dropOut(0.25f)
+          .layer.dense(150, 200)
+          .activation.sigmoid()
+          .layer.dropOut(0.25f)
+          .layer.dense(200, imageResolution * imageResolution)
+          .activation.sigmoid()
+          .build();
+
       discriminator = new NetworkBuilder()
-        .layer.dense(imageResolution * imageResolution + 10, 128)
-        .activation.sigmoid()
-        .layer.dense(128, 1)
-        .activation.sigmoid()
-        .build();
+          .distribution.xavier()
+          .layer.dense(imageResolution * imageResolution + 10, 30)
+          .activation.sigmoid()
+          .layer.dropOut(0.25f)
+          .layer.dense(30, 10)
+          .activation.sigmoid()
+          .layer.dropOut(0.25f)
+          .layer.dense(10, 1)
+          .activation.sigmoid()
+          .build();
     }
-    
+
     int trainIndex;
-    
+
     public void train() {
       trainIndex++;
       if (trainIndex >= images.length)
         trainIndex = 0;
-      
+
       float[] noiseData = new float[noiseCount + 10];
       for (int i = 0; i < noiseCount; i++)
-        noiseData[i] = (float) Math.random();
-      
+        noiseData[i] = (float) Math.random() * Float.MAX_VALUE - Float.MAX_VALUE / 2;
+
       int fakeLabel = (int) (Math.random() * 10f);
       noiseData[noiseCount + fakeLabel] = 1;
-      
+
       float[] generatedData = generator.predict(NumpyArray.of(noiseData)).transpose().data[0];
       float[] discriminatorInput = new float[generatedData.length + 10];
       System.arraycopy(generatedData, 0, discriminatorInput, 0, generatedData.length);
       discriminatorInput[generatedData.length + fakeLabel] = 1;
       float discriminated = discriminator.predict(NumpyArray.of(discriminatorInput)).data[0][0];
-      
+
       // train generator
       NumpyArray grad = discriminator.backwardWithoutTrain(
-        discriminatorLoss,
-        NumpyArray.of(discriminated),
-        NumpyArray.of(0),
-        learningRate
+          discriminatorLoss,
+          NumpyArray.of(discriminated),
+          NumpyArray.of(0),
+          learningRate
       );
       float[] data = grad.transpose().data[0];
       float[] truncated = new float[imageResolution * imageResolution];
       System.arraycopy(data, 0, truncated, 0, truncated.length);
       grad = NumpyArray.of(truncated).multiply(-1);
-      
-      generator.trainWithoutPredict(
-        generatorLoss,
-        NumpyArray.of(generatedData),
-        grad,
-        learningRate
+
+      generator.backpropagaton(
+          generatorLoss,
+          NumpyArray.of(generatedData),
+          grad,
+          learningRate
       );
-      
+
       // train discriminator
       int[] pixels = images[trainIndex];
       int label = labels[trainIndex];
@@ -143,93 +157,93 @@ public class GenerativeAdversarialNetwork extends JFrame {
 //      discriminatorInput = new float[realData.length + 10];
       System.arraycopy(realData, 0, discriminatorInput, 0, realData.length);
       discriminatorInput[realData.length + label] = 1;
-      
+
       discriminator.trainSingle(
-        discriminatorLoss,
-        discriminatorInput,
-        new float[] { 0 },
-        learningRate
+          discriminatorLoss,
+          discriminatorInput,
+          new float[]{0},
+          learningRate
       );
 
 //      discriminatorInput = new float[generatedData.length + 10];
       System.arraycopy(generatedData, 0, discriminatorInput, 0, generatedData.length);
       discriminatorInput[generatedData.length + fakeLabel] = 1;
       discriminator.trainSingle(
-        discriminatorLoss,
-        discriminatorInput,
-        new float[] { 1 },
-        learningRate
+          discriminatorLoss,
+          discriminatorInput,
+          new float[]{1},
+          learningRate
       );
     }
-    
+
     int thinkIndex;
     int thinkLabel;
     float[] noiseThink = new float[noiseCount];
-    
+
     void think() {
       thinkIndex++;
       thinkLabel++;
-      
+
       if (thinkLabel > 9)
         thinkLabel = 0;
       thinkIndex %= images.length;
-      
+
       for (int i = 0; i < noiseCount; i++)
-        noiseThink[i] = (float) Math.random();
+        noiseThink[i] = (float) Math.random() * Float.MAX_VALUE - Float.MAX_VALUE / 2;
     }
-    
+
     public void paint(Graphics graphics) {
       if (thinkIndex == 0)
         return;
-      
+
       float[] thinkInput = new float[noiseCount + 10];
       System.arraycopy(noiseThink, 0, thinkInput, 0, noiseThink.length);
       thinkInput[noiseCount + thinkLabel] = 1;
       float[] generatedData = generator.predictThreadSafe(thinkInput).transpose().data[0];
       int[] pixels = floatToPixels(generatedData);
-      
+
       BufferedImage bufferedImage = new BufferedImage(imageResolution, imageResolution, BufferedImage.TYPE_INT_RGB);
-      
+
       for (int i = 0; i < imageResolution * imageResolution; i++) {
         int brightness = pixels[i];
         bufferedImage.setRGB(
-          i / imageResolution,
-          i % imageResolution,
-          new Color(brightness, brightness, brightness).getRGB()
+            i / imageResolution,
+            i % imageResolution,
+            new Color(brightness, brightness, brightness).getRGB()
         );
       }
-      
+
       graphics.drawImage(
-        bufferedImage,
-        0, 0,
-        getWidth() / 2, getHeight(),
-        null
+          bufferedImage,
+          0, 0,
+          getWidth() / 2, getHeight(),
+          null
       );
     }
-    
+
     static int[] downScale(int[] pixels, int to) {
       int[] resized = new int[to * to];
-      
+
       for (int i = 0; i < pixels.length; i++) {
         int x = i % 28;
         int y = i / 28;
-        
+
         x /= (float) 28 / to;
         y /= (float) 28 / to;
         int i2 = x + y * to;
-        
+
         resized[i2] += pixels[i];
       }
-      
+
       float divide = (float) pixels.length / resized.length;
       for (int i = 0; i < resized.length; i++) {
         resized[i] = (int) (resized[i] / divide);
         resized[i] = Math.min(Math.max(resized[i], 0), 255);
       }
-      
+
       return resized;
     }
-    
+
     static float[] pixelsToFloat(int[] pixels) {
       float[] output = new float[pixels.length];
       for (int i = 0; i < pixels.length; i++) {
@@ -237,7 +251,7 @@ public class GenerativeAdversarialNetwork extends JFrame {
       }
       return output;
     }
-    
+
     static int[] floatToPixels(float[] pixels) {
       int[] output = new int[pixels.length];
       for (int i = 0; i < pixels.length; i++) {

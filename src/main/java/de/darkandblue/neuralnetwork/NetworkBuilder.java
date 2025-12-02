@@ -3,7 +3,9 @@ package de.darkandblue.neuralnetwork;
 import de.darkandblue.neuralnetwork.initialization.Distribution;
 import de.darkandblue.neuralnetwork.initialization.CustomDistribution;
 import de.darkandblue.neuralnetwork.initialization.NormalDistribution;
+import de.darkandblue.neuralnetwork.initialization.Xavier;
 import de.darkandblue.neuralnetwork.layer.Dense;
+import de.darkandblue.neuralnetwork.layer.Dropout;
 import de.darkandblue.neuralnetwork.layer.Layer;
 import de.darkandblue.neuralnetwork.layer.activation.*;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
@@ -25,19 +27,29 @@ public class NetworkBuilder {
       publicDistribution = new NormalDistribution();
       return networkBuilder;
     }
-  
+    
     public NetworkBuilder zeroBias() {
       publicDistribution = new CustomDistribution(0, 0.0001f, -1, 1);
       return networkBuilder;
     }
-  
+    
     public NetworkBuilder ownBias(float from, float to) {
       publicDistribution = new CustomDistribution(from, to, -1, 1);
       return networkBuilder;
     }
-  
+    
     public NetworkBuilder customDistribution(float fromBias, float toBias, float fromWeight, float toWeight) {
       publicDistribution = new CustomDistribution(fromBias, toBias, fromWeight, toWeight);
+      return networkBuilder;
+    }
+    
+    public NetworkBuilder xavier() {
+      publicDistribution = new Xavier(true);
+      return networkBuilder;
+    }
+    
+    public NetworkBuilder xavier(boolean normal) {
+      publicDistribution = new Xavier(normal);
       return networkBuilder;
     }
   }
@@ -84,6 +96,11 @@ public class NetworkBuilder {
       layerList.add(new Dense(weights, bias));
       return networkBuilder;
     }
+    
+    public NetworkBuilder dropOut(float dropOutRate) {
+      layerList.add(new Dropout(dropOutRate));
+      return networkBuilder;
+    }
   }
   
   public de.darkandblue.neuralnetwork.NeuralNetwork build() {
@@ -93,12 +110,12 @@ public class NetworkBuilder {
   @Override
   public String toString() {
     StringBuilder stringBuilder = new StringBuilder();
-
+    
     for (Layer layer : layerList) {
       stringBuilder.append(layer);
       stringBuilder.append(", ");
     }
-
+    
     String outputString;
     if (layerList.size() == 0) {
       stringBuilder.append("Empty");
@@ -106,7 +123,7 @@ public class NetworkBuilder {
     } else {
       outputString = stringBuilder.substring(0, stringBuilder.length() - 2);
     }
-
+    
     return outputString;
   }
 }
