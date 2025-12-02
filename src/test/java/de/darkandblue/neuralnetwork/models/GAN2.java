@@ -12,15 +12,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-public class GenerativeAdversarialNetwork2 extends JFrame {
+public class GAN2 extends JFrame {
   public static void main(String[] args) {
-    new GenerativeAdversarialNetwork2();
+    new GAN2();
   }
   
   Scene scene;
   
-  public GenerativeAdversarialNetwork2() {
-    setTitle("GenerativeAdversarialNetwork");
+  public GAN2() {
+    setTitle("GAN");
     
     scene = new Scene();
     add(scene);

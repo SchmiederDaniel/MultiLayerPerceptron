@@ -55,8 +55,8 @@ public class NeuralNetwork {
     return grad;
   }
   
-  public void trainSingle(LossFunction lossFunction, float[] x_train, float[] y_train, float learning_rate) {
-    trainSingle(lossFunction, x_train, y_train, learning_rate, false);
+  public float trainSingle(LossFunction lossFunction, float[] x_train, float[] y_train, float learning_rate) {
+    return trainSingle(lossFunction, x_train, y_train, learning_rate, false);
   }
   
   // Own train function
@@ -79,8 +79,7 @@ public class NeuralNetwork {
   }
   
   // Own train function
-  public void trainSingle(LossFunction lossFunction, float[] x_train, float[] y_train, float learning_rate, boolean verbose) {
-    float error = 0;
+  public float trainSingle(LossFunction lossFunction, float[] x_train, float[] y_train, float learning_rate, boolean verbose) {
     NumpyArray x = NumpyArray.of(x_train);
     NumpyArray y = NumpyArray.of(y_train);
     
@@ -88,8 +87,8 @@ public class NeuralNetwork {
     NumpyArray output = predict(x);
     
     //error
-    if (verbose)
-      error += lossFunction.loss(y, output);
+//    if (verbose)
+    float error = lossFunction.loss(y, output);
     
     //backward
     NumpyArray grad = lossFunction.loss_prime(y, output);
@@ -101,6 +100,7 @@ public class NeuralNetwork {
     
     if (verbose)
       System.out.println("error=" + error);
+    return error;
   }
   
   public NumpyArray backpropagaton(LossFunction lossFunction, NumpyArray output, NumpyArray y, float learning_rate) {

@@ -2,10 +2,8 @@ package de.darkandblue.neuralnetwork.models;
 
 import de.darkandblue.neuralnetwork.NetworkBuilder;
 import de.darkandblue.neuralnetwork.NeuralNetwork;
-import de.darkandblue.neuralnetwork.lossfunction.AbsoluteLoss;
 import de.darkandblue.neuralnetwork.lossfunction.BinaryCrossEntropy;
 import de.darkandblue.neuralnetwork.lossfunction.LossFunction;
-import de.darkandblue.neuralnetwork.lossfunction.MeanSquareError;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 import de.darkandblue.neuralnetwork.util.MnistLoader;
 
@@ -13,15 +11,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-public class GenerativeAdversarialNetwork extends JFrame {
+public class GAN extends JFrame {
   public static void main(String[] args) {
-    new GenerativeAdversarialNetwork();
+    new GAN();
   }
 
   Scene scene;
 
-  public GenerativeAdversarialNetwork() {
-    setTitle("GenerativeAdversarialNetwork");
+  public GAN() {
+    setTitle("GAN");
 
     scene = new Scene();
     add(scene);
@@ -72,9 +70,9 @@ public class GenerativeAdversarialNetwork extends JFrame {
     int[][] images;
     int[] labels;
     int noiseCount = 10;
-    LossFunction generatorLoss = new AbsoluteLoss();
+//    LossFunction generatorLoss = new AbsoluteLoss();
     LossFunction discriminatorLoss = new BinaryCrossEntropy();
-    float learningRate = 0.05f;
+    float learningRate = 0.01f;
 
     public Scene() {
       images = MnistLoader.readImages().stream().toArray(int[][]::new);
@@ -87,26 +85,21 @@ public class GenerativeAdversarialNetwork extends JFrame {
           .distribution.xavier()
           .layer.dense(noiseCount + 10, 50)
           .activation.sigmoid()
-          .layer.dropOut(0.25f)
           .layer.dense(50, 150)
           .activation.sigmoid()
-          .layer.dropOut(0.25f)
           .layer.dense(150, 200)
           .activation.sigmoid()
-          .layer.dropOut(0.25f)
           .layer.dense(200, imageResolution * imageResolution)
           .activation.sigmoid()
           .build();
 
       discriminator = new NetworkBuilder()
           .distribution.xavier()
-          .layer.dense(imageResolution * imageResolution + 10, 30)
+          .layer.dense(imageResolution * imageResolution + 10, 80)
           .activation.sigmoid()
-          .layer.dropOut(0.25f)
-          .layer.dense(30, 10)
+          .layer.dense(80, 50)
           .activation.sigmoid()
-          .layer.dropOut(0.25f)
-          .layer.dense(10, 1)
+          .layer.dense(50, 1)
           .activation.sigmoid()
           .build();
     }
@@ -141,11 +134,17 @@ public class GenerativeAdversarialNetwork extends JFrame {
       float[] data = grad.transpose().data[0];
       float[] truncated = new float[imageResolution * imageResolution];
       System.arraycopy(data, 0, truncated, 0, truncated.length);
-      grad = NumpyArray.of(truncated).multiply(-1);
+      grad = NumpyArray.of(truncated);
+      
+//      grad = grad.multiply(-1);
+//      generator.backpropagaton(
+//          generatorLoss,
+//          NumpyArray.of(generatedData),
+//          grad,
+//          learningRate
+//      );
 
-      generator.backpropagaton(
-          generatorLoss,
-          NumpyArray.of(generatedData),
+      generator.continueBackpropagation(
           grad,
           learningRate
       );
@@ -206,6 +205,7 @@ public class GenerativeAdversarialNetwork extends JFrame {
 
       for (int i = 0; i < imageResolution * imageResolution; i++) {
         int brightness = pixels[i];
+        brightness = Math.max(Math.min(brightness, 255), 0);
         bufferedImage.setRGB(
             i / imageResolution,
             i % imageResolution,

@@ -88,7 +88,7 @@ public class Diffusion extends JFrame {
     int[] testLabels;
     
     private static final int STEP_INDEX_COUNT = 10;
-    private static final int MAX_STEP_SIZE = 800;
+    private static final int MAX_STEP_SIZE = 400;
     static float learningRate = 0.05f;
     LossFunction lossFunction = new AbsoluteLoss();
     static NeuralNetwork neuralNetwork = new NetworkBuilder()
@@ -194,6 +194,10 @@ public class Diffusion extends JFrame {
     static float[] addNoise(int seed, float[] array, float strength) {
       float[] output = new float[array.length];
       Random random = new Random(seed);
+
+//      strength = Math.min(Math.max(strength, 0), 1);
+      strength = strength * strength;
+//      strength = (float) Math.sqrt(strength);
       
       for (int i = 0; i < array.length; i++) {
         float value = array[i];
@@ -227,7 +231,7 @@ public class Diffusion extends JFrame {
       
       float imageSize = width / 5f;
       
-      float[] noisyOriginal = noisy;
+      final float[] noisyOriginal = noisy;
       float imageCounter = 0;
       int counter = 0;
       for (float i = sliderViewSteps.getValue(); i >= 0; i -= thinkStepSize) {
