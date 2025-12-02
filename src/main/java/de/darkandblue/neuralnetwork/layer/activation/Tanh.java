@@ -4,6 +4,14 @@ import de.darkandblue.neuralnetwork.layer.Layer;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 public class Tanh extends Activation {
+  public Tanh() {
+    
+  }
+  
+  public Tanh(NumpyArray input) {
+    super(input);
+  }
+  
   @Override
   public NumpyArray activation(NumpyArray input) {
     float[][] newData = new float[input.rows()][input.cols()];
@@ -36,6 +44,9 @@ public class Tanh extends Activation {
   
   @Override
   public Layer deepCopy() {
-    return new Tanh();
+    if (this.input == null)
+      return new Tanh();
+    else
+      return new Tanh(this.input.copy());
   }
 }

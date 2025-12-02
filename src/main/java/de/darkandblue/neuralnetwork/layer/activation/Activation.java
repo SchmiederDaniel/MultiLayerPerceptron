@@ -27,4 +27,6 @@ public abstract class Activation extends Layer {
   }
   
   public abstract NumpyArray activation_prime(NumpyArray input);
+  
+  public abstract Layer deepCopy();
 }

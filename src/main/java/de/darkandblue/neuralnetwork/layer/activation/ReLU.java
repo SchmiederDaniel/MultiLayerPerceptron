@@ -4,6 +4,13 @@ import de.darkandblue.neuralnetwork.layer.Layer;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 public class ReLU extends Activation {
+  public ReLU(NumpyArray input) {
+    super(input);
+  }
+  
+  public ReLU() {
+  }
+  
   @Override
   public NumpyArray activation(NumpyArray input) {
     float[][] newData = new float[input.rows()][input.cols()];
@@ -36,6 +43,9 @@ public class ReLU extends Activation {
   
   @Override
   public Layer deepCopy() {
-    return new ReLU();
+    if (this.input == null)
+      return new ReLU();
+    else
+      return new ReLU(this.input.copy());
   }
 }

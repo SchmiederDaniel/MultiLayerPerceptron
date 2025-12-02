@@ -4,8 +4,8 @@ import de.darkandblue.neuralnetwork.layer.Layer;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 public class Sigmoid extends Activation {
-  public Sigmoid(NumpyArray copyInput) {
-    super(copyInput);
+  public Sigmoid(NumpyArray input) {
+    super(input);
   }
   
   public Sigmoid() {

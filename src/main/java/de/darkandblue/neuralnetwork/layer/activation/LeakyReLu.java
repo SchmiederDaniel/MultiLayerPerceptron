@@ -4,7 +4,20 @@ import de.darkandblue.neuralnetwork.layer.Layer;
 import de.darkandblue.neuralnetwork.math.NumpyArray;
 
 public class LeakyReLu extends Activation {
-  private final float c = 0.001f;
+  private final float c;
+  
+  public LeakyReLu(float c, NumpyArray input) {
+    super(input);
+    this.c = c;
+  }
+  
+  public LeakyReLu() {
+    this.c = 0.001f;
+  }
+  
+  public LeakyReLu(float c) {
+    this.c = c;
+  }
   
   @Override
   public NumpyArray activation(NumpyArray input) {
@@ -42,7 +55,10 @@ public class LeakyReLu extends Activation {
   
   @Override
   public Layer deepCopy() {
-    return new LeakyReLu();
+    if (this.input == null)
+      return new LeakyReLu(c);
+    else
+      return new LeakyReLu(c, this.input.copy());
   }
   
   @Override

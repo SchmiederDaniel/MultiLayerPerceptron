@@ -6,6 +6,13 @@ import de.darkandblue.neuralnetwork.math.NumpyArray;
 public class ELU extends Activation {
   private final static float alpha = 1;
   
+  public ELU(NumpyArray input) {
+    super(input);
+  }
+  
+  public ELU() {
+  }
+  
   @Override
   public NumpyArray activation(NumpyArray input) {
     float[][] newData = new float[input.rows()][input.cols()];
@@ -50,6 +57,9 @@ public class ELU extends Activation {
   
   @Override
   public Layer deepCopy() {
-    return new ELU();
+    if (this.input == null)
+      return new ELU();
+    else
+      return new ELU(this.input.copy());
   }
 }

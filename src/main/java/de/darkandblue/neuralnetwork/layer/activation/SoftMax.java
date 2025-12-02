@@ -7,6 +7,16 @@ public class SoftMax extends Layer {
   NumpyArray input;
   NumpyArray output;
   
+  public SoftMax() {
+    
+  }
+  
+  public SoftMax(NumpyArray input, NumpyArray output) {
+    super();
+    this.input = input;
+    this.output = output;
+  }
+  
   @Override
   public NumpyArray forward(NumpyArray input) {
     this.input = input;
@@ -20,7 +30,7 @@ public class SoftMax extends Layer {
   
   @Override
   public Layer deepCopy() {
-    return new SoftMax();
+    return new SoftMax(this.input, this.output);
   }
   
   public NumpyArray activation(NumpyArray input) {
