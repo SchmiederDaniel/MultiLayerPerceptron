@@ -99,8 +99,7 @@ class ScalarTest {
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
             .append("c = a + b")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         float pyAdd = Py.toScalar(plus.parseToFloat());
         assertFloatEquals(((Scalar) a.add(b)).value, pyAdd);
         
@@ -109,8 +108,7 @@ class ScalarTest {
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
             .append("c = a - b")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         float pySub = Py.toScalar(minus.parseToFloat());
         assertFloatEquals(((Scalar) a.subtract(b)).value, pySub);
         
@@ -119,8 +117,7 @@ class ScalarTest {
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
             .append("c = a * b")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         float pyMul = Py.toScalar(times.parseToFloat());
         assertFloatEquals(((Scalar) a.mul(b)).value, pyMul);
         
@@ -129,8 +126,7 @@ class ScalarTest {
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
             .append("c = a * b") // numpy scalar @ scalar is not defined; use *
-            .append("print(c)")
-            .execute();
+            .execute("c");
         float pyMatMul = Py.toScalar(matmul.parseToFloat());
         assertFloatEquals(((Scalar) a.matmul(b)).value, pyMatMul);
         
@@ -139,8 +135,7 @@ class ScalarTest {
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
             .append("c = a / b")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         float pyDiv = Py.toScalar(div.parseToFloat());
         assertFloatEquals(((Scalar) a.divide(b)).value, pyDiv);
     }

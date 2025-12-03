@@ -77,6 +77,11 @@ public class PythonBridge {
             this.pythonCommand = cmd;
         }
         
+        public PythonResult execute(String varName) throws IOException, InterruptedException {
+            this.scriptContent.append("print(" + varName + ")");
+            return execute();
+        }
+        
         /**
          * Writes the script to a file and executes it.
          */

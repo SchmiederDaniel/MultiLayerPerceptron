@@ -285,8 +285,7 @@ class MatrixTest {
         PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
             .append(MAT_A_DEF)
             .append("c = a + 3.5")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.add(s)).values);
         
         // 2. Matrix + Vector (Broadcasting)
@@ -295,8 +294,7 @@ class MatrixTest {
             .append(MAT_A_DEF)
             .append("v = np.array([2.5, -2.5, 2.5])")
             .append("c = a + v")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.add(v)).values);
         
         // 3. Matrix + Matrix (Element-wise)
@@ -305,8 +303,7 @@ class MatrixTest {
             .append(MAT_A_DEF)
             .append(MAT_B_DEF)
             .append("c = a + b")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.add(B)).values);
     }
     
@@ -319,8 +316,7 @@ class MatrixTest {
         PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
             .append(MAT_A_DEF)
             .append("c = a - (-3.5)")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.subtract(s)).values);
         
         // 2. Matrix - Vector (Broadcasting)
@@ -329,8 +325,7 @@ class MatrixTest {
             .append(MAT_A_DEF)
             .append("v = np.array([2.5, -2.5, 2.5])")
             .append("c = a - v")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.subtract(v)).values);
         
         // 3. Matrix - Matrix
@@ -339,8 +334,7 @@ class MatrixTest {
             .append(MAT_A_DEF)
             .append(MAT_B_DEF)
             .append("c = a - b")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.subtract(B)).values);
     }
     
@@ -357,8 +351,7 @@ class MatrixTest {
         PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
             .append(MAT_A_DEF)
             .append("c = a * -2.0") // Numpy * is element-wise
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.mul(s)).values);
         
         // 2. Matrix * Vector (Dot Product -> Result is Vector)
@@ -367,8 +360,7 @@ class MatrixTest {
             .append(MAT_A_DEF)
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a @ v") // Numpy @ is matmul/dot
-            .append("print(c)")
-            .execute();
+            .execute("c");
         // Note: Result of Matrix (2x3) @ Vector (3) is Vector (2), so we use to1D
         assertArrayEquals((float[]) r2.parseToFloat(), ((Vector) A.mul(v)).values);
         
@@ -379,8 +371,7 @@ class MatrixTest {
             .append("m1 = np.array([[1.0, 2.0],[3.0, 4.0]])")
             .append("m2 = np.array([[2.0, 0.0],[1.0, 3.0]])")
             .append("c = m1 @ m2") // Numpy @ operator
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) M1.mul(M2)).values);
     }
     
@@ -397,8 +388,7 @@ class MatrixTest {
         PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
             .append(MAT_A_DEF)
             .append("c = a * -2.0")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.matmul(s)).values);
         
         // 2. Matrix .matmul Matrix (Element-wise)
@@ -407,8 +397,7 @@ class MatrixTest {
             .append(MAT_A_DEF)
             .append(MAT_B_DEF)
             .append("c = a * b") // Numpy * is element-wise
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.matmul(B)).values);
     }
     
@@ -423,8 +412,7 @@ class MatrixTest {
             .append(MAT_A_DEF)
             .append("v = np.array([2.0, -1.0, 3.0])")
             .append("c = a * v")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.matmul(v)).values);
     }
     
@@ -437,8 +425,7 @@ class MatrixTest {
         PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
             .append("a = np.array([[2.0, 6.0, -10.0],[4.0, 8.0, -12.0]])")
             .append("c = a / -2.0")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.divide(s)).values);
         
         // 2. Matrix / Vector (Broadcasting)
@@ -448,8 +435,7 @@ class MatrixTest {
             .append("a = np.array([[2.0, 6.0, -8.0],[4.0, 12.0, 16.0]])")
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a / v")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) D2.divide(v)).values);
         
         // 3. Matrix / Matrix (Element-wise)
@@ -459,8 +445,7 @@ class MatrixTest {
             .append("n = np.array([[6.0, 9.0, -12.0],[8.0, 10.0, 15.0]])")
             .append("d = np.array([[2.0, -3.0, 4.0],[4.0, 5.0, -3.0]])")
             .append("c = n / d")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) N.divide(D)).values);
     }
     
@@ -471,8 +456,7 @@ class MatrixTest {
         PythonBridge.PythonResult r = new PythonBridge.PythonBuilder()
             .append(MAT_A_DEF)
             .append("c = a.T")
-            .append("print(c)")
-            .execute();
+            .execute("c");
         assertArrayEquals((Object[]) r.parseToFloat(), ((Matrix) A.transpose()).values);
     }
 }
