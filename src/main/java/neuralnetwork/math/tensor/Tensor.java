@@ -1,8 +1,6 @@
 package neuralnetwork.math.tensor;
 
 
-import jep.*;
-
 public abstract class Tensor {
     abstract Tensor applyOperation(FloatOperator operation);
     
@@ -115,11 +113,6 @@ public abstract class Tensor {
     }
     
     public static void main(String[] args) {
-        MainInterpreter.setJepLibraryPath("C:\\Users\\darka\\AppData\\Local\\Programs\\Python\\Python38\\Lib\\site-packages\\jep\\jep.dll");
-        try(SharedInterpreter interp = new SharedInterpreter()) {
-            float[] f = new float[] { 1.0f, 2.1f, 3.3f, 4.5f, 5.6f, 6.7f };
-            NDArray<float[]> nd = new NDArray<>(f, 3, 2);
-            interp.set("x", nd);
-        }
+
     }
 }

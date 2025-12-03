@@ -2,8 +2,6 @@ plugins {
     id 'java'
 }
 
-group 'de.darkandblue'
-version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -12,6 +10,12 @@ repositories {
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+
+    // https://mvnrepository.com/artifact/org.jetbrains/annotations
+    implementation 'org.jetbrains:annotations:24.1.0'
+    
+//    // https://mvnrepository.com/artifact/org.jetbrains/annotations-java5
+//    implementation 'org.jetbrains:annotations-java5:24.1.0'
 }
 
 test {
