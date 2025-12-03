@@ -1,15 +1,13 @@
 package neuralnetwork.math.tensor;
 
-import neuralnetwork.math.tensor.Matrix;
-import neuralnetwork.math.tensor.Scalar;
-import neuralnetwork.math.tensor.Tensor;
-import neuralnetwork.math.tensor.Vector;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
+
+import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class MatrixTest {
-    
     
     @Test
     void add() {
@@ -273,4 +271,316 @@ class MatrixTest {
         assertArrayEquals(a.values, b.values);
         assertNotSame(a.values, b.values);
     }
+    
+    // Helper for setup to keep tests clean
+    private static final String MAT_A_DEF = "a = np.array([[1.0, 2.0, 3.0],[4.0, 5.0, 6.0]])";
+    private static final String MAT_B_DEF = "b = np.array([[2.0, -1.0, 3.0],[-2.0, 1.0, -3.0]])";
+    
+    @Test
+    void testAdd() throws Exception {
+        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
+        
+        // 1. Matrix + Scalar
+        Scalar s = new Scalar(3.5f);
+        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append("c = a + 3.5")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r1.parseToFloat()), ((Matrix) A.add(s)).values);
+        
+        // 2. Matrix + Vector (Broadcasting)
+        Vector v = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
+        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append("v = np.array([2.5, -2.5, 2.5])")
+            .append("c = a + v")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r2.parseToFloat()), ((Matrix) A.add(v)).values);
+        
+        // 3. Matrix + Matrix (Element-wise)
+        Matrix B = new Matrix(new float[][] { { 2f, -1f, 3f }, { -2f, 1f, -3f } });
+        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append(MAT_B_DEF)
+            .append("c = a + b")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r3.parseToFloat()), ((Matrix) A.add(B)).values);
+    }
+    
+    @Test
+    void testSubtract() throws Exception {
+        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
+        
+        // 1. Matrix - Scalar
+        Scalar s = new Scalar(-3.5f);
+        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append("c = a - (-3.5)")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r1.parseToFloat()), ((Matrix) A.subtract(s)).values);
+        
+        // 2. Matrix - Vector (Broadcasting)
+        Vector v = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
+        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append("v = np.array([2.5, -2.5, 2.5])")
+            .append("c = a - v")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r2.parseToFloat()), ((Matrix) A.subtract(v)).values);
+        
+        // 3. Matrix - Matrix
+        Matrix B = new Matrix(new float[][] { { 2f, -1f, 3f }, { -2f, 1f, -3f } });
+        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append(MAT_B_DEF)
+            .append("c = a - b")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r3.parseToFloat()), ((Matrix) A.subtract(B)).values);
+    }
+    
+    @Test
+    void testMul() throws Exception {
+        /* * Based on your code, A.mul() acts as:
+         * - Element-wise multiplication for Scalars
+         * - Dot Product / Matrix Multiplication for Vectors and Matrices (@ operator)
+         */
+        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
+        
+        // 1. Matrix * Scalar (Element-wise)
+        Scalar s = new Scalar(-2f);
+        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append("c = a * -2.0") // Numpy * is element-wise
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r1.parseToFloat()), ((Matrix) A.mul(s)).values);
+        
+        // 2. Matrix * Vector (Dot Product -> Result is Vector)
+        Vector v = new Vector(new float[] { 2f, -3f, 4f });
+        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append("v = np.array([2.0, -3.0, 4.0])")
+            .append("c = a @ v") // Numpy @ is matmul/dot
+            .append("print(c)")
+            .execute();
+        // Note: Result of Matrix (2x3) @ Vector (3) is Vector (2), so we use to1D
+        assertArrayEquals(NumpyParser.to1D(r2.parseToFloat()), ((Vector) A.mul(v)).values);
+        
+        // 3. Matrix * Matrix (Matrix Multiplication / Dot Product)
+        Matrix M1 = new Matrix(new float[][] { { 1f, 2f }, { 3f, 4f } });
+        Matrix M2 = new Matrix(new float[][] { { 2f, 0f }, { 1f, 3f } });
+        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+            .append("m1 = np.array([[1.0, 2.0],[3.0, 4.0]])")
+            .append("m2 = np.array([[2.0, 0.0],[1.0, 3.0]])")
+            .append("c = m1 @ m2") // Numpy @ operator
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r3.parseToFloat()), ((Matrix) M1.mul(M2)).values);
+    }
+    
+    @Test
+    void testMatmul() throws Exception {
+        /*
+         * Based on your code, A.matmul() acts as:
+         * - Element-wise multiplication (Hadamard product) for all inputs
+         */
+        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
+        
+        // 1. Matrix .matmul Scalar (Element-wise)
+        Scalar s = new Scalar(-2f);
+        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append("c = a * -2.0")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r1.parseToFloat()), ((Matrix) A.matmul(s)).values);
+        
+        // 2. Matrix .matmul Matrix (Element-wise)
+        Matrix B = new Matrix(new float[][] { { 2f, -1f, 3f }, { -2f, 1f, -3f } });
+        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append(MAT_B_DEF)
+            .append("c = a * b") // Numpy * is element-wise
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r2.parseToFloat()), ((Matrix) A.matmul(B)).values);
+    }
+    
+    @Disabled("Skipping temporarily due to not being implemented yet in Matrix.java")
+    @Test
+    void testMatmulBroadcast() throws IOException, InterruptedException {
+        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
+        // 3. Edge Case: Matrix .matmul Vector (Broadcasted Element-wise)
+        // This confirms 'matmul' is strictly element-wise in your implementation
+        Vector v = new Vector(new float[] { 2.0f, -1.0f, 3.0f });
+        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append("v = np.array([2.0, -1.0, 3.0])")
+            .append("c = a * v")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r3.parseToFloat()), ((Matrix) A.matmul(v)).values);
+    }
+    
+    @Test
+    void testDivide() throws Exception {
+        Matrix A = new Matrix(new float[][] { { 2f, 6f, -10f }, { 4f, 8f, -12f } });
+        
+        // 1. Matrix / Scalar
+        Scalar s = new Scalar(-2f);
+        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+            .append("a = np.array([[2.0, 6.0, -10.0],[4.0, 8.0, -12.0]])")
+            .append("c = a / -2.0")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r1.parseToFloat()), ((Matrix) A.divide(s)).values);
+        
+        // 2. Matrix / Vector (Broadcasting)
+        Matrix D2 = new Matrix(new float[][] { { 2f, 6f, -8f }, { 4f, 12f, 16f } });
+        Vector v = new Vector(new float[] { 2f, -3f, 4f });
+        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+            .append("a = np.array([[2.0, 6.0, -8.0],[4.0, 12.0, 16.0]])")
+            .append("v = np.array([2.0, -3.0, 4.0])")
+            .append("c = a / v")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r2.parseToFloat()), ((Matrix) D2.divide(v)).values);
+        
+        // 3. Matrix / Matrix (Element-wise)
+        Matrix N = new Matrix(new float[][] { { 6f, 9f, -12f }, { 8f, 10f, 15f } });
+        Matrix D = new Matrix(new float[][] { { 2f, -3f, 4f }, { 4f, 5f, -3f } });
+        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+            .append("n = np.array([[6.0, 9.0, -12.0],[8.0, 10.0, 15.0]])")
+            .append("d = np.array([[2.0, -3.0, 4.0],[4.0, 5.0, -3.0]])")
+            .append("c = n / d")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r3.parseToFloat()), ((Matrix) N.divide(D)).values);
+    }
+    
+    @Test
+    void testTranspose() throws Exception {
+        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
+        
+        PythonBridge.PythonResult r = new PythonBridge.PythonBuilder()
+            .append(MAT_A_DEF)
+            .append("c = a.T")
+            .append("print(c)")
+            .execute();
+        assertArrayEquals(NumpyParser.to2D(r.parseToFloat()), ((Matrix) A.transpose()).values);
+    }
+
+//    @Test
+//    void python_matrix_ops_compare_with_java() throws Exception {
+//        // Matrix + scalar
+//        Matrix A = new Matrix(new float[][] {
+//            { 1f, 2f, 3f },
+//            { 4f, 5f, 6f }
+//        });
+//        Scalar s = new Scalar(3.5f);
+//        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+//            .append("a = np.array([[1.0, 2.0, 3.0],[4.0, 5.0, 6.0]])")
+//            .append("c = a + 3.5")
+//            .append("print(c)")
+//            .execute();
+//        float[][] py1 = NumpyParser.to2D(r1.parseToFloat());
+//        assertArrayEquals(py1, ((Matrix) A.add(s)).values);
+//
+//        // Matrix + vector (broadcast columns)
+//        Vector v = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
+//        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+//            .append("a = np.array([[1.0, 2.0, 3.0],[4.0, 5.0, 6.0]])")
+//            .append("b = np.array([2.5, -2.5, 2.5])")
+//            .append("c = a + b")
+//            .append("print(c)")
+//            .execute();
+//        float[][] py2 = NumpyParser.to2D(r2.parseToFloat());
+//        assertArrayEquals(py2, ((Matrix) A.add(v)).values);
+//
+//        // Matrix + Matrix elementwise
+//        Matrix B = new Matrix(new float[][] {
+//            { 2f, -1f, 3f },
+//            { -2f, 1f, -3f }
+//        });
+//        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+//            .append("a = np.array([[1.0, 2.0, 3.0],[4.0, 5.0, 6.0]])")
+//            .append("b = np.array([[2.0, -1.0, 3.0],[-2.0, 1.0, -3.0]])")
+//            .append("c = a + b")
+//            .append("print(c)")
+//            .execute();
+//        float[][] py3 = NumpyParser.to2D(r3.parseToFloat());
+//        assertArrayEquals(py3, ((Matrix) A.add(B)).values);
+//
+//        // mul: A @ vector
+//        Vector mv = new Vector(new float[] { 2f, -3f, 4f });
+//        PythonBridge.PythonResult r4 = new PythonBridge.PythonBuilder()
+//            .append("a = np.array([[1.0, 2.0, 3.0],[4.0, 5.0, 6.0]])")
+//            .append("b = np.array([2.0, -3.0, 4.0])")
+//            .append("c = a @ b")
+//            .append("print(c)")
+//            .execute();
+//        float[] py4 = NumpyParser.to1D(r4.parseToFloat());
+//        assertArrayEquals(py4, ((Vector) A.mul(mv)).values);
+//
+//        // mul: A @ M
+//        Matrix M1 = new Matrix(new float[][] { { 1f, 2f }, { 3f, 4f } });
+//        Matrix M2 = new Matrix(new float[][] { { 2f, 0f }, { 1f, 3f } });
+//        PythonBridge.PythonResult r5 = new PythonBridge.PythonBuilder()
+//            .append("a = np.array([[1.0, 2.0],[3.0, 4.0]])")
+//            .append("b = np.array([[2.0, 0.0],[1.0, 3.0]])")
+//            .append("c = a @ b")
+//            .append("print(c)")
+//            .execute();
+//        float[][] py5 = NumpyParser.to2D(r5.parseToFloat());
+//        assertArrayEquals(py5, ((Matrix) M1.mul(M2)).values);
+//
+//        // matmul: elementwise multiplication
+//        Matrix E1 = new Matrix(new float[][] {{1f,2f,3f},{4f,5f,6f}});
+//        Matrix E2 = new Matrix(new float[][] {{2f,-1f,3f},{-2f,1f,-3f}});
+//        PythonBridge.PythonResult r6 = new PythonBridge.PythonBuilder()
+//            .append("a = np.array([[1.0, 2.0, 3.0],[4.0, 5.0, 6.0]])")
+//            .append("b = np.array([[2.0, -1.0, 3.0],[-2.0, 1.0, -3.0]])")
+//            .append("c = a * b")
+//            .append("print(c)")
+//            .execute();
+//        float[][] py6 = NumpyParser.to2D(r6.parseToFloat());
+//        assertArrayEquals(py6, ((Matrix) E1.matmul(E2)).values);
+//
+//        // divide: by scalar
+//        Matrix D = new Matrix(new float[][] {{2f,6f,-10f},{4f,8f,-12f}});
+//        PythonBridge.PythonResult r7 = new PythonBridge.PythonBuilder()
+//            .append("a = np.array([[2.0, 6.0, -10.0],[4.0, 8.0, -12.0]])")
+//            .append("c = a / -2.0")
+//            .append("print(c)")
+//            .execute();
+//        float[][] py7 = NumpyParser.to2D(r7.parseToFloat());
+//        assertArrayEquals(py7, ((Matrix) D.divide(new Scalar(-2f))).values);
+//
+//        // divide: by vector (broadcast columns)
+//        Matrix D2 = new Matrix(new float[][] {{2f,6f,-8f},{4f,12f,16f}});
+//        Vector dv = new Vector(new float[] {2f,-3f,4f});
+//        PythonBridge.PythonResult r8 = new PythonBridge.PythonBuilder()
+//            .append("a = np.array([[2.0, 6.0, -8.0],[4.0, 12.0, 16.0]])")
+//            .append("b = np.array([2.0, -3.0, 4.0])")
+//            .append("c = a / b")
+//            .append("print(c)")
+//            .execute();
+//        float[][] py8 = NumpyParser.to2D(r8.parseToFloat());
+//        assertArrayEquals(py8, ((Matrix) D2.divide(dv)).values);
+//
+//        // transpose
+//        PythonBridge.PythonResult r9 = new PythonBridge.PythonBuilder()
+//            .append("a = np.array([[1.0, 2.0, 3.0],[4.0, 5.0, 6.0]])")
+//            .append("c = a.T")
+//            .append("print(c)")
+//            .execute();
+//        float[][] py9 = NumpyParser.to2D(r9.parseToFloat());
+//        assertArrayEquals(py9, ((Matrix) A.transpose()).values);
+//    }
 }

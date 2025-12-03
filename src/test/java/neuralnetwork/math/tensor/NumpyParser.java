@@ -4,6 +4,8 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class NumpyParser {
     
     /**
@@ -229,5 +231,52 @@ public class NumpyParser {
                 throw new RuntimeException("Failed to parse number: " + token, e);
             }
         }
+    }
+    
+    // Helpers for tolerant comparisons and parsing from Python
+    private static void assertFloatArrayEquals(float[] expected, float[] actual, float eps) {
+        assertEquals(expected.length, actual.length, "Length mismatch");
+        for (int i = 0; i < expected.length; i++) {
+            assertEquals(expected[i], actual[i], eps, "Mismatch at index " + i);
+        }
+    }
+    
+    private static void assertFloat2DArrayEquals(float[][] expected, float[][] actual, float eps) {
+        assertEquals(expected.length, actual.length, "Row count mismatch");
+        for (int i = 0; i < expected.length; i++) {
+            assertFloatArrayEquals(expected[i], actual[i], eps);
+        }
+    }
+    
+    public static float[] to1D(Object parsed) {
+        if (parsed instanceof float[] fa) return fa;
+        if (parsed instanceof Object[] oa && oa.length > 0 && oa[0] instanceof Float) {
+            float[] out = new float[oa.length];
+            for (int i = 0; i < oa.length; i++) out[i] = ((Float) oa[i]);
+            return out;
+        }
+        throw new AssertionError("Unexpected parsed 1D type: " + (parsed == null ? "null" : parsed.getClass()));
+    }
+    
+    public static float[][] to2D(Object parsed) {
+        if (parsed instanceof float[][] faa) return faa;
+        if (parsed instanceof Object[] oa && oa.length > 0) {
+            if (oa[0] instanceof float[] row) {
+                float[][] out = new float[oa.length][];
+                for (int i = 0; i < oa.length; i++) out[i] = (float[]) oa[i];
+                return out;
+            }
+            if (oa[0] instanceof Object[] ob && ob.length > 0 && ob[0] instanceof Float) {
+                float[][] out = new float[oa.length][];
+                for (int i = 0; i < oa.length; i++) {
+                    Object[] rowObj = (Object[]) oa[i];
+                    float[] rowArr = new float[rowObj.length];
+                    for (int j = 0; j < rowObj.length; j++) rowArr[j] = (Float) rowObj[j];
+                    out[i] = rowArr;
+                }
+                return out;
+            }
+        }
+        throw new AssertionError("Unexpected parsed 2D type: " + (parsed == null ? "null" : parsed.getClass()));
     }
 }
