@@ -282,7 +282,7 @@ class MatrixTest {
         
         // 1. Matrix + Scalar
         Scalar s = new Scalar(3.5f);
-        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+        PythonResult r1 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append("c = a + 3.5")
             .execute("c");
@@ -290,7 +290,7 @@ class MatrixTest {
         
         // 2. Matrix + Vector (Broadcasting)
         Vector v = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
-        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+        PythonResult r2 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append("v = np.array([2.5, -2.5, 2.5])")
             .append("c = a + v")
@@ -299,7 +299,7 @@ class MatrixTest {
         
         // 3. Matrix + Matrix (Element-wise)
         Matrix B = new Matrix(new float[][] { { 2f, -1f, 3f }, { -2f, 1f, -3f } });
-        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+        PythonResult r3 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append(MAT_B_DEF)
             .append("c = a + b")
@@ -313,7 +313,7 @@ class MatrixTest {
         
         // 1. Matrix - Scalar
         Scalar s = new Scalar(-3.5f);
-        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+        PythonResult r1 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append("c = a - (-3.5)")
             .execute("c");
@@ -321,7 +321,7 @@ class MatrixTest {
         
         // 2. Matrix - Vector (Broadcasting)
         Vector v = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
-        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+        PythonResult r2 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append("v = np.array([2.5, -2.5, 2.5])")
             .append("c = a - v")
@@ -330,7 +330,7 @@ class MatrixTest {
         
         // 3. Matrix - Matrix
         Matrix B = new Matrix(new float[][] { { 2f, -1f, 3f }, { -2f, 1f, -3f } });
-        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+        PythonResult r3 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append(MAT_B_DEF)
             .append("c = a - b")
@@ -348,7 +348,7 @@ class MatrixTest {
         
         // 1. Matrix * Scalar (Element-wise)
         Scalar s = new Scalar(-2f);
-        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+        PythonResult r1 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append("c = a * -2.0") // Numpy * is element-wise
             .execute("c");
@@ -356,7 +356,7 @@ class MatrixTest {
         
         // 2. Matrix * Vector (Dot Product -> Result is Vector)
         Vector v = new Vector(new float[] { 2f, -3f, 4f });
-        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+        PythonResult r2 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a @ v") // Numpy @ is matmul/dot
@@ -367,7 +367,7 @@ class MatrixTest {
         // 3. Matrix * Matrix (Matrix Multiplication / Dot Product)
         Matrix M1 = new Matrix(new float[][] { { 1f, 2f }, { 3f, 4f } });
         Matrix M2 = new Matrix(new float[][] { { 2f, 0f }, { 1f, 3f } });
-        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+        PythonResult r3 = new PythonBuilder()
             .append("m1 = np.array([[1.0, 2.0],[3.0, 4.0]])")
             .append("m2 = np.array([[2.0, 0.0],[1.0, 3.0]])")
             .append("c = m1 @ m2") // Numpy @ operator
@@ -385,7 +385,7 @@ class MatrixTest {
         
         // 1. Matrix .matmul Scalar (Element-wise)
         Scalar s = new Scalar(-2f);
-        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+        PythonResult r1 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append("c = a * -2.0")
             .execute("c");
@@ -393,7 +393,7 @@ class MatrixTest {
         
         // 2. Matrix .matmul Matrix (Element-wise)
         Matrix B = new Matrix(new float[][] { { 2f, -1f, 3f }, { -2f, 1f, -3f } });
-        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+        PythonResult r2 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append(MAT_B_DEF)
             .append("c = a * b") // Numpy * is element-wise
@@ -408,7 +408,7 @@ class MatrixTest {
         // 3. Edge Case: Matrix .matmul Vector (Broadcasted Element-wise)
         // This confirms 'matmul' is strictly element-wise in your implementation
         Vector v = new Vector(new float[] { 2.0f, -1.0f, 3.0f });
-        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+        PythonResult r3 = new PythonBuilder()
             .append(MAT_A_DEF)
             .append("v = np.array([2.0, -1.0, 3.0])")
             .append("c = a * v")
@@ -422,7 +422,7 @@ class MatrixTest {
         
         // 1. Matrix / Scalar
         Scalar s = new Scalar(-2f);
-        PythonBridge.PythonResult r1 = new PythonBridge.PythonBuilder()
+        PythonResult r1 = new PythonBuilder()
             .append("a = np.array([[2.0, 6.0, -10.0],[4.0, 8.0, -12.0]])")
             .append("c = a / -2.0")
             .execute("c");
@@ -431,7 +431,7 @@ class MatrixTest {
         // 2. Matrix / Vector (Broadcasting)
         Matrix D2 = new Matrix(new float[][] { { 2f, 6f, -8f }, { 4f, 12f, 16f } });
         Vector v = new Vector(new float[] { 2f, -3f, 4f });
-        PythonBridge.PythonResult r2 = new PythonBridge.PythonBuilder()
+        PythonResult r2 = new PythonBuilder()
             .append("a = np.array([[2.0, 6.0, -8.0],[4.0, 12.0, 16.0]])")
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a / v")
@@ -441,7 +441,7 @@ class MatrixTest {
         // 3. Matrix / Matrix (Element-wise)
         Matrix N = new Matrix(new float[][] { { 6f, 9f, -12f }, { 8f, 10f, 15f } });
         Matrix D = new Matrix(new float[][] { { 2f, -3f, 4f }, { 4f, 5f, -3f } });
-        PythonBridge.PythonResult r3 = new PythonBridge.PythonBuilder()
+        PythonResult r3 = new PythonBuilder()
             .append("n = np.array([[6.0, 9.0, -12.0],[8.0, 10.0, 15.0]])")
             .append("d = np.array([[2.0, -3.0, 4.0],[4.0, 5.0, -3.0]])")
             .append("c = n / d")
@@ -453,7 +453,7 @@ class MatrixTest {
     void testTranspose() throws Exception {
         Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
         
-        PythonBridge.PythonResult r = new PythonBridge.PythonBuilder()
+        PythonResult r = new PythonBuilder()
             .append(MAT_A_DEF)
             .append("c = a.T")
             .execute("c");

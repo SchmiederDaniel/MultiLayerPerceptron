@@ -95,7 +95,7 @@ class ScalarTest {
         Scalar b = new Scalar(3f);
         
         // +
-        PythonBridge.PythonResult plus = new PythonBridge.PythonBuilder()
+        PythonResult plus = new PythonBuilder()
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
             .append("c = a + b")
@@ -104,7 +104,7 @@ class ScalarTest {
         assertFloatEquals(((Scalar) a.add(b)).value, pyAdd);
         
         // -
-        PythonBridge.PythonResult minus = new PythonBridge.PythonBuilder()
+        PythonResult minus = new PythonBuilder()
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
             .append("c = a - b")
@@ -113,7 +113,7 @@ class ScalarTest {
         assertFloatEquals(((Scalar) a.subtract(b)).value, pySub);
         
         // * (elementwise for scalars)
-        PythonBridge.PythonResult times = new PythonBridge.PythonBuilder()
+        PythonResult times = new PythonBuilder()
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
             .append("c = a * b")
@@ -122,7 +122,7 @@ class ScalarTest {
         assertFloatEquals(((Scalar) a.mul(b)).value, pyMul);
         
         // matmul in Java behaves like element-wise for Scalars, still product
-        PythonBridge.PythonResult matmul = new PythonBridge.PythonBuilder()
+        PythonResult matmul = new PythonBuilder()
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
             .append("c = a * b") // numpy scalar @ scalar is not defined; use *
@@ -131,7 +131,7 @@ class ScalarTest {
         assertFloatEquals(((Scalar) a.matmul(b)).value, pyMatMul);
         
         // /
-        PythonBridge.PythonResult div = new PythonBridge.PythonBuilder()
+        PythonResult div = new PythonBuilder()
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
             .append("c = a / b")
