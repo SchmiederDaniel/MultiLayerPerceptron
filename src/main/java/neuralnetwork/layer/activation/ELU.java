@@ -15,15 +15,17 @@ public class ELU extends Activation {
   
   @Override
   public NumpyArray activation(NumpyArray input) {
-    float[][] newData = new float[input.rows()][input.cols()];
+    float[][][] newData = new float[input.depth()][input.rows()][input.cols()];
     
-    for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
-      for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
-        float x = input.data[0][rowIndex][colIndex];
-        if (x >= 0)
-          newData[rowIndex][colIndex] = x;
-        else
-          newData[rowIndex][colIndex] = (float) (alpha * (Math.pow(Math.E, x) - 1));
+    for (int depthIndex = 0; depthIndex < input.depth(); depthIndex++) {
+      for (int rowIndex = 0; rowIndex < input.rows(); rowIndex++) {
+        for (int colIndex = 0; colIndex < input.cols(); colIndex++) {
+          float x = input.data[depthIndex][rowIndex][colIndex];
+          if (x >= 0)
+            newData[depthIndex][rowIndex][colIndex] = x;
+          else
+            newData[depthIndex][rowIndex][colIndex] = (float) (alpha * (Math.pow(Math.E, x) - 1));
+        }
       }
     }
     

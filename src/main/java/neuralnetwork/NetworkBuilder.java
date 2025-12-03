@@ -1,9 +1,6 @@
 package neuralnetwork;
 
-import neuralnetwork.initialization.Distribution;
-import neuralnetwork.initialization.CustomDistribution;
-import neuralnetwork.initialization.NormalDistribution;
-import neuralnetwork.initialization.Xavier;
+import neuralnetwork.initialization.*;
 import neuralnetwork.layer.*;
 import neuralnetwork.layer.activation.*;
 import neuralnetwork.math.NumpyArray;
@@ -11,7 +8,6 @@ import neuralnetwork.math.NumpyArray;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.IntStream;
 
 public class NetworkBuilder {
   List<Layer> layerList = new ArrayList<>();
@@ -21,7 +17,7 @@ public class NetworkBuilder {
   
   NetworkBuilder networkBuilder = this;
   Distribution weightInitialization = new Xavier(true);
-  private int[] lastConvDimensions;
+  private int[] lastOutputDimension;
   
   public class PrivateDistribution {
     public NetworkBuilder normalDistribution() {
@@ -44,9 +40,19 @@ public class NetworkBuilder {
       return networkBuilder;
     }
     
-    public NetworkBuilder xavier() {
-      weightInitialization = new Xavier(true);
+    public NetworkBuilder heNormal() {
+      return heNormal(true);
+    }
+    
+    
+    public NetworkBuilder heNormal(boolean normal) {
+      weightInitialization = new HeNormal(normal);
       return networkBuilder;
+    }
+    
+    
+    public NetworkBuilder xavier() {
+      return xavier(true);
     }
     
     public NetworkBuilder xavier(boolean normal) {
@@ -94,12 +100,12 @@ public class NetworkBuilder {
     }
     
     public NetworkBuilder dense(int output_size) {
-      if (lastConvDimensions == null) {
+      if (lastOutputDimension == null) {
         throw new IllegalStateException("No convolutional layer found before dense layer.");
       }
-      int input_size = multiply(lastConvDimensions);
+      int input_size = multiply(lastOutputDimension);
       System.out.println("creation: " + input_size);
-      lastConvDimensions = null;
+      lastOutputDimension = null;
       layerList.add(new Dense(input_size, output_size, weightInitialization));
       return networkBuilder;
     }
@@ -114,15 +120,15 @@ public class NetworkBuilder {
       return networkBuilder;
     }
     
-    public NetworkBuilder conv2D(int inputHeight, int inputWidth, int kernelHeight, int kernelWidth, int strideH, int strideW, int filters) {
-      Conv2D layer = new Conv2D(filters, kernelHeight, kernelWidth, strideH, strideW, weightInitialization);
-      lastConvDimensions = layer.outputDimension(inputHeight, inputWidth);
+    public NetworkBuilder conv2D(int inputChannels, int inputHeight, int inputWidth, int kernelHeight, int kernelWidth, int strideH, int strideW, int filters) {
+      Conv2D layer = new Conv2D(inputChannels, filters, kernelHeight, kernelWidth, strideH, strideW, weightInitialization);
+      lastOutputDimension = layer.outputDimension(inputHeight, inputWidth);
       layerList.add(layer);
       return networkBuilder;
     }
     
-    public NetworkBuilder conv2D(int inputHeight, int inputWidth, int kernelHeight, int kernelWidth, int stride, int filters) {
-      return conv2D(inputHeight, inputWidth, kernelHeight, kernelWidth, stride, stride, filters);
+    public NetworkBuilder conv2D(int inputChannels, int inputHeight, int inputWidth, int kernelHeight, int kernelWidth, int stride, int filters) {
+      return conv2D(inputChannels, inputHeight, inputWidth, kernelHeight, kernelWidth, stride, stride, filters);
     }
     
     public NetworkBuilder flatten() {
@@ -140,8 +146,27 @@ public class NetworkBuilder {
       return networkBuilder;
     }
     
+    public NetworkBuilder reshape(int depth, int rows, int cols) {
+      layerList.add(new Reshape(depth, rows, cols));
+      return networkBuilder;
+    }
+    
     public NetworkBuilder dropOut(double dropOutRate) {
       return dropOut((float) dropOutRate);
+    }
+    
+    /**
+     * Note: Fourier transform applies sine and cosine functions to the input. So the number of output channels are doubled.
+     *
+     * @param fourierCount
+     * @param growthBase
+     * @return
+     */
+    public NetworkBuilder fourier(int inputDimension, int fourierCount, float growthBase) {
+      FourierTransform fourier = new FourierTransform(fourierCount, growthBase);
+      lastOutputDimension = fourier.outputDimension(inputDimension);
+      layerList.add(fourier);
+      return networkBuilder;
     }
   }
   

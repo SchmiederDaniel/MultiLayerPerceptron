@@ -10,7 +10,7 @@ import java.util.List;
 
 public class NeuralNetwork {
   //  List<Layer> layerList;
-  public static boolean DEBUG = false;
+  public static boolean DEBUG = true;
   public Layer[] layerArray;
   
   public NeuralNetwork(Layer[] layerArray) {

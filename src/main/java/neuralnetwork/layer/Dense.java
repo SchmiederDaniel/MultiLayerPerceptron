@@ -37,11 +37,11 @@ public class Dense extends Layer {
   public NumpyArray forward(NumpyArray input) {
     if (NeuralNetwork.DEBUG) {
       if (input.depth() != 1)
-        throw new IllegalArgumentException("Input must be a vector");
+        throw new IllegalArgumentException("Input must be a vector and not: " + input.dimension() + ", weights: " + weights.dimension());
       if (input.cols() != 1)
-        throw new IllegalArgumentException("Input must be a vector and not: " + input.dimension());
+        throw new IllegalArgumentException("Input must be a vector and not: " + input.dimension() + ", weights: " + weights.dimension());
       if (input.rows() != weights.cols())
-        throw new IllegalArgumentException("Input size doesn't match weights size. Input: " + input.dimension() + ", weights: " + weights.dimension() + "");
+        throw new IllegalArgumentException("Input size doesn't match weights size. Input: " + input.dimension() + ", weights: " + weights.dimension());
     }
     
     this.input = input;

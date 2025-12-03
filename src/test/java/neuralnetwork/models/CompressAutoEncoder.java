@@ -21,7 +21,7 @@ public class CompressAutoEncoder extends JFrame {
     new CompressAutoEncoder();
   }
   
-  float learningRate = 0.00025f;
+  float learningRate = 0.00001f;
   
   public CompressAutoEncoder() {
     setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -32,7 +32,7 @@ public class CompressAutoEncoder extends JFrame {
     
     JSlider sliderLearningRate = new JSlider(0, 5000, (int) (5000f * learningRate * 3f));
     sliderLearningRate.addChangeListener(e -> {
-      learningRate = sliderLearningRate.getValue() / (float) sliderLearningRate.getMaximum() / 3f;
+      learningRate = sliderLearningRate.getValue() / (float) sliderLearningRate.getMaximum() / 3000f;
       updateTitle();
     });
     add(sliderLearningRate);
@@ -55,42 +55,54 @@ public class CompressAutoEncoder extends JFrame {
   }
   
   void updateTitle() {
-    setTitle("learningRate: " + learningRate);
+    setTitle("learningRate: " + String.format("%.8f", learningRate));
   }
   
   class Scene extends JPanel {
     List<int[]> imageList;
     List<Integer> labelList;
     NeuralNetwork encoder = new NetworkBuilder()
-//        .distribution.customDistribution(0, 0.01f, -0.3f, 0.3f)
-        .distribution.xavier()
-        .layer.conv2D(28, 28, 5, 5, 2, 1)
+//        .distribution.customDistribution(0.3f, 0.31f, -0.3f, 0.3f)
+        .distribution.heNormal()
+        .layer.conv2D(1, 28, 28, 5, 5, 2, 10)
         .activation.leakyReLu()
-        .layer.conv2D(12, 12, 3, 3, 1, 1)
+        .layer.conv2D(10, 12, 12, 3, 3, 1, 5)
         .activation.leakyReLu()
-        .layer.conv2D(10, 10, 3, 3, 1, 1)
+        .layer.conv2D(5, 10, 10, 3, 3, 1, 5)
+        .activation.leakyReLu()
+        .layer.conv2D(5, 8, 8, 3, 3, 1, 5)
+//        .activation.leakyReLu()
+//        .layer.conv2D(5, 6, 6, 3, 3, 1, 3)
         .activation.leakyReLu()
         .layer.flatten()
         .layer.transpose()
-        .layer.dense(1)
+        .layer.dense(200)
         .activation.leakyReLu()
+        .layer.dense(200, 1)
+//        .distribution.xavier()
         .build();
     NeuralNetwork decoder = new NetworkBuilder()
 //        .distribution.xavier()
-        .distribution.customDistribution(0.1f, 0.11f, -0.3f, 0.3f)
-        .layer.dense(1, 80)
+//        .layer.fourier(1, 5, 2f)
+//        .distribution.xavier()
+//        .layer.dense(256)
+        .distribution.heNormal()
+//        .distribution.customDistribution(0, 0.01f, -0.1f, 0.1f)
+//        .distribution.customDistribution(0.1f, 0.11f, -0.3f, 0.3f)
+        .layer.dense(1, 256)
         .activation.leakyReLu()
-        .layer.dropOut(0.2)
-        .layer.dense(80, 120)
+        .layer.reshape(1, 16, 16)
+        .layer.conv2D(1, 16, 16, 3, 3, 1, 10)
         .activation.leakyReLu()
-        .layer.dropOut(0.2)
-        .layer.dense(120, 120)
+        .layer.conv2D(10, 14, 14, 3, 3, 1, 10)
         .activation.leakyReLu()
-        .layer.dropOut(0.2)
-        .layer.dense(120, 784)
+        .layer.flatten()
+        .layer.transpose()
+        .distribution.xavier()
+        .layer.dense(784)
         .activation.sigmoid()
         .build();
-    private final static LossFunction decoderLossFunction = new MeanSquareError();
+    private final static LossFunction decoderLossFunction = new AbsoluteLoss();
     
     // TODO: wouldn't it be usefull if the loss function of an image gets determined by how much a number looks like a number? 
     // a algorithm would be usefull which compares the generated image and how it deviates from pixels near by from the original
@@ -135,12 +147,12 @@ public class CompressAutoEncoder extends JFrame {
       for (int i = 0; i < iterations; i++) {
         int[] pixels = imageList.get(i);
         float[] floatPixel = pixelsToFloat(pixels);
-
+        
         NumpyArray x = NumpyArray.of(floatPixel);
         NumpyArray x2d = x.reshape(1, 28, 28);
         NumpyArray encoderOutput = encoder.predictThreadSafe(x2d);
         NumpyArray decoderOutput = decoder.predictThreadSafe(encoderOutput);
-
+        
         float[] totalError = decoderOutput.transpose().data[0][0];
         float sum = 0;
         for (int e = 0; e < totalError.length; e++) {
@@ -209,18 +221,18 @@ public class CompressAutoEncoder extends JFrame {
       NumpyArray x = NumpyArray.of(inputs);
       NumpyArray x2d = x.reshape(1, 28, 28);
       x = encoder.predictThreadSafe(x2d);
-
+      
       int[] lowResPixels = floatToPixels(x.transpose().data[0][0]);
       image = new BufferedImage(7, 7, BufferedImage.TYPE_INT_RGB);
       setPixels(lowResPixels, image);
       graphics.drawImage(image, imageSize, 0, imageSize, imageSize, null);
-
+      
       float[] y = decoder.predictThreadSafe(x).transpose().data[0][0];
       int[] predictedPixels = floatToPixels(y);
       image = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
       setPixels(predictedPixels, image);
       graphics.drawImage(image, imageSize * 2, 0, imageSize, imageSize, null);
-
+      
       graphics.setColor(Color.white);
       graphics.drawString("error: " + testError, 10, imageSize - 20);
     }
