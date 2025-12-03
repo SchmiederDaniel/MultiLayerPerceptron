@@ -1,5 +1,7 @@
-package neuralnetwork;
+package neuralnetwork.models;
 
+import neuralnetwork.NetworkBuilder;
+import neuralnetwork.NeuralNetwork;
 import neuralnetwork.layer.Dense;
 import neuralnetwork.layer.Layer;
 import neuralnetwork.lossfunction.MeanSquareError;

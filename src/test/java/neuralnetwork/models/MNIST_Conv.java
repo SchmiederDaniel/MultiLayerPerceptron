@@ -1,5 +1,7 @@
-package neuralnetwork;
+package neuralnetwork.models;
 
+import neuralnetwork.NetworkBuilder;
+import neuralnetwork.NeuralNetwork;
 import neuralnetwork.lossfunction.MeanSquareError;
 import neuralnetwork.math.NumpyArray;
 import neuralnetwork.util.MnistLoader;

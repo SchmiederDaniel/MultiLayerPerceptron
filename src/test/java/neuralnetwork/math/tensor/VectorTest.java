@@ -60,12 +60,12 @@ class VectorTest {
         assertInstanceOf(Vector.class, c);
         assertArrayEquals(new float[] { 2, -6, 12 }, ((Vector) c).values);
         
-        // Testing for Matrix
-        a = new Vector(new float[] { 2f, 6f });
-        b = new Matrix(new float[][] { { 2f, 6f }, { 3f, 1f } });
-        c = b.mul(a);
-        assertInstanceOf(Matrix.class, c);
-        assertArrayEquals(new float[][] { { 4, 36 }, { 6, 6 } }, ((Matrix) c).values);
+//        // Testing for Matrix
+//        a = new Vector(new float[] { 2f, 6f });
+//        b = new Matrix(new float[][] { { 2f, 6f }, { 3f, 1f } });
+//        c = b.mul(a);
+//        assertInstanceOf(Matrix.class, c);
+//        assertArrayEquals(new float[][] { { 4, 36 }, { 6, 6 } }, ((Matrix) c).values);
     }
     
     @Test

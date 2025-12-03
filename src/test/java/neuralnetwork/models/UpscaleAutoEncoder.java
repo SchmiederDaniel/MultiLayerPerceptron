@@ -1,5 +1,7 @@
-package neuralnetwork;
+package neuralnetwork.models;
 
+import neuralnetwork.NetworkBuilder;
+import neuralnetwork.NeuralNetwork;
 import neuralnetwork.lossfunction.BinaryCrossEntropy;
 import neuralnetwork.lossfunction.LossFunction;
 import neuralnetwork.util.MnistLoader;
