@@ -1,78 +1,105 @@
 package de.darkandblue.neuralnetwork.math.tensor;
 
 import java.util.Arrays;
-import java.util.stream.IntStream;
 
-public class Vector implements Tensor {
-  public final float[] values;
-  
-  public Vector(float[] values) {
-    this.values = values;
-  }
-  
-  @Override
-  public Tensor add(Tensor tensor) {
-    if (tensor instanceof Scalar)
-      return this.add((Scalar) tensor);
-    else
-      throw new IllegalArgumentException(
-          "The shape of Vector doesn't match " + tensor.type()
-              + ". The other Tensor needs to be of lower dimension.");
-  }
-  
-  public Vector add(Scalar scalar) {
-    float[] newValues = new float[this.values.length];
-    for (int i = 0; i < this.values.length; i++) {
-      newValues[i] = this.values[i] + scalar.value;
+public class Vector extends Tensor {
+    public final float[] values;
+    
+    public Vector(float[] values) {
+        this.values = values;
     }
-    return new Vector(newValues);
-  }
-  
-  @Override
-  public Tensor subtract(Tensor tensor) {
-    return null;
-  }
-  
-  @Override
-  public Tensor multiply(Tensor tensor) {
-    return null;
-  }
-  
-  @Override
-  public Tensor divide(Tensor tensor) {
-    return null;
-  }
-  
-  @Override
-  public Tensor copyFill(float value) {
-    float[] array = new float[this.values.length];
-    Arrays.fill(array, value);
-    return new Vector(array);
-  }
-  
-  @Override
-  public Tensor transpose() {
-    return new Vector(Arrays.copyOf(this.values, this.values.length));
-  }
-  
-  @Override
-  public Tensor deepCopy() {
-    return new Vector(Arrays.copyOf(this.values, this.values.length));
-  }
-  
-  @Override
-  public String type() {
-    return "Vector";
-  }
-  
-  @Override
-  public String toString() {
-    return type() + "(" + this.values.length + ")";
-  }
-  
-  public static Vector full(float value, int size) {
-    float[] values = new float[size];
-    Arrays.fill(values, value);
-    return new Vector(values);
-  }
+    
+    @Override
+    public Tensor applyOperation(FloatOperator operation) {
+        float[] result = new float[this.values.length];
+        for (int i = 0; i < values.length; i++) {
+            result[i] = operation.applyAsFloat(this.values[i]);
+        }
+        return new Vector(result);
+    }
+    
+    public Vector applyVectorOperation(Vector vector, FloatBinaryOperator operation) {
+        float[] result = new float[this.values.length];
+        for (int i = 0; i < values.length; i++) {
+            result[i] = operation.applyAsFloat(this.values[i], vector.values[i]);
+        }
+        return new Vector(result);
+    }
+    
+    @Override
+    public Tensor add(Tensor tensor) {
+        if (tensor instanceof Scalar) {
+            return applyOperation(a -> a + ((Scalar) tensor).value);
+        } else if (tensor instanceof Vector) {
+            return applyVectorOperation((Vector) tensor, (a, b) -> a + b);
+        } else {
+            return tensor.add(this);
+        }
+    }
+
+    @Override
+    public Tensor subtract(Tensor tensor) {
+        if (tensor instanceof Scalar) {
+            return applyOperation(a -> a - ((Scalar) tensor).value);
+        } else if (tensor instanceof Vector) {
+            return applyVectorOperation((Vector) tensor, (a, b) -> a - b);
+        } else {
+            return tensor.subtract(this);
+        }
+    }
+
+    @Override
+    public Tensor mul(Tensor tensor) {
+        if (tensor instanceof Scalar) {
+            return applyOperation(a -> a * ((Scalar) tensor).value);
+        } else if (tensor instanceof Vector) {
+            return applyVectorOperation((Vector) tensor, (a, b) -> a * b);
+        } else {
+            return tensor.mul(this);
+        }
+    }
+    
+    @Override
+    public Tensor matmul(Tensor tensor) {
+        return applyVectorOperation((Vector) tensor, (a, b) -> a * b);
+    }
+    
+    @Override
+    public Tensor divide(Tensor tensor) {
+        if (tensor instanceof Scalar) {
+            return applyOperation(a -> a / ((Scalar) tensor).value);
+        } else if (tensor instanceof Vector) {
+            return applyVectorOperation((Vector) tensor, (a, b) -> a / b);
+        } else {
+            return tensor.divide(this);
+        }
+    }
+
+    @Override
+    public Tensor transpose() {
+        return new Vector(Arrays.copyOf(this.values, this.values.length));
+    }
+
+    @Override
+    public Tensor deepCopy() {
+        return new Vector(Arrays.copyOf(this.values, this.values.length));
+    }
+
+    @Override
+    public String type() {
+        return "Vector";
+    }
+
+    @Override
+    public String toString() {
+        return type() + "(" + this.values.length + ")";
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Vector) {
+            return Arrays.equals(this.values, ((Vector) obj).values);
+        }
+        return false;
+    }
 }
