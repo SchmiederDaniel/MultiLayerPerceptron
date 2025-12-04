@@ -76,8 +76,8 @@ public class PythonBuilder {
         this.pythonCommand = cmd;
     }
     
-    public PythonResult execute(String varName) throws IOException, InterruptedException {
-        this.scriptContent.append("print(" + varName + ")");
+    public PythonResult execute(String print) throws IOException, InterruptedException {
+        this.scriptContent.append("print(" + print + ")");
         return execute();
     }
     

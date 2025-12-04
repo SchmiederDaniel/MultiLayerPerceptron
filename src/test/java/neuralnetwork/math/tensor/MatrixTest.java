@@ -273,17 +273,17 @@ class MatrixTest {
     }
     
     // Helper for setup to keep tests clean
-    private static final String MAT_A_DEF = "a = np.array([[1.0, 2.0, 3.0],[4.0, 5.0, 6.0]])";
-    private static final String MAT_B_DEF = "b = np.array([[2.0, -1.0, 3.0],[-2.0, 1.0, -3.0]])";
+    private static final String A_PY = "a = np.array([[1.0, 2.0, 3.0],[4.0, 5.0, 6.0]])";
+    private static final String B_PY = "b = np.array([[2.0, -1.0, 3.0],[-2.0, 1.0, -3.0]])";
+    private static final Matrix B = new Matrix(new float[][] { { 2f, -1f, 3f }, { -2f, 1f, -3f } });
     
     @Test
     void testAdd() throws Exception {
-        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
-        
+        final Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
         // 1. Matrix + Scalar
         Scalar s = new Scalar(3.5f);
         PythonResult r1 = new PythonBuilder()
-            .append(MAT_A_DEF)
+            .append(A_PY)
             .append("c = a + 3.5")
             .execute("c");
         assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.add(s)).values);
@@ -291,17 +291,16 @@ class MatrixTest {
         // 2. Matrix + Vector (Broadcasting)
         Vector v = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
         PythonResult r2 = new PythonBuilder()
-            .append(MAT_A_DEF)
+            .append(A_PY)
             .append("v = np.array([2.5, -2.5, 2.5])")
             .append("c = a + v")
             .execute("c");
         assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.add(v)).values);
         
         // 3. Matrix + Matrix (Element-wise)
-        Matrix B = new Matrix(new float[][] { { 2f, -1f, 3f }, { -2f, 1f, -3f } });
         PythonResult r3 = new PythonBuilder()
-            .append(MAT_A_DEF)
-            .append(MAT_B_DEF)
+            .append(A_PY)
+            .append(B_PY)
             .append("c = a + b")
             .execute("c");
         assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.add(B)).values);
@@ -309,12 +308,11 @@ class MatrixTest {
     
     @Test
     void testSubtract() throws Exception {
-        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
-        
+        final Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
         // 1. Matrix - Scalar
         Scalar s = new Scalar(-3.5f);
         PythonResult r1 = new PythonBuilder()
-            .append(MAT_A_DEF)
+            .append(A_PY)
             .append("c = a - (-3.5)")
             .execute("c");
         assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.subtract(s)).values);
@@ -322,17 +320,16 @@ class MatrixTest {
         // 2. Matrix - Vector (Broadcasting)
         Vector v = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
         PythonResult r2 = new PythonBuilder()
-            .append(MAT_A_DEF)
+            .append(A_PY)
             .append("v = np.array([2.5, -2.5, 2.5])")
             .append("c = a - v")
             .execute("c");
         assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.subtract(v)).values);
         
         // 3. Matrix - Matrix
-        Matrix B = new Matrix(new float[][] { { 2f, -1f, 3f }, { -2f, 1f, -3f } });
         PythonResult r3 = new PythonBuilder()
-            .append(MAT_A_DEF)
-            .append(MAT_B_DEF)
+            .append(A_PY)
+            .append(B_PY)
             .append("c = a - b")
             .execute("c");
         assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.subtract(B)).values);
@@ -340,16 +337,16 @@ class MatrixTest {
     
     @Test
     void testMul() throws Exception {
+        final Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
         /* * Based on your code, A.mul() acts as:
          * - Element-wise multiplication for Scalars
          * - Dot Product / Matrix Multiplication for Vectors and Matrices (@ operator)
          */
-        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
         
         // 1. Matrix * Scalar (Element-wise)
         Scalar s = new Scalar(-2f);
         PythonResult r1 = new PythonBuilder()
-            .append(MAT_A_DEF)
+            .append(A_PY)
             .append("c = a * -2.0") // Numpy * is element-wise
             .execute("c");
         assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.mul(s)).values);
@@ -357,7 +354,7 @@ class MatrixTest {
         // 2. Matrix * Vector (Dot Product -> Result is Vector)
         Vector v = new Vector(new float[] { 2f, -3f, 4f });
         PythonResult r2 = new PythonBuilder()
-            .append(MAT_A_DEF)
+            .append(A_PY)
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a @ v") // Numpy @ is matmul/dot
             .execute("c");
@@ -377,25 +374,24 @@ class MatrixTest {
     
     @Test
     void testMatmul() throws Exception {
+        final Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
         /*
          * Based on your code, A.matmul() acts as:
          * - Element-wise multiplication (Hadamard product) for all inputs
          */
-        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
         
         // 1. Matrix .matmul Scalar (Element-wise)
         Scalar s = new Scalar(-2f);
         PythonResult r1 = new PythonBuilder()
-            .append(MAT_A_DEF)
+            .append(A_PY)
             .append("c = a * -2.0")
             .execute("c");
         assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.matmul(s)).values);
         
         // 2. Matrix .matmul Matrix (Element-wise)
-        Matrix B = new Matrix(new float[][] { { 2f, -1f, 3f }, { -2f, 1f, -3f } });
         PythonResult r2 = new PythonBuilder()
-            .append(MAT_A_DEF)
-            .append(MAT_B_DEF)
+            .append(A_PY)
+            .append(B_PY)
             .append("c = a * b") // Numpy * is element-wise
             .execute("c");
         assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.matmul(B)).values);
@@ -404,12 +400,12 @@ class MatrixTest {
     @Disabled("Skipping temporarily due to not being implemented yet in Matrix.java")
     @Test
     void testMatmulBroadcast() throws IOException, InterruptedException {
-        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
+        final Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
         // 3. Edge Case: Matrix .matmul Vector (Broadcasted Element-wise)
         // This confirms 'matmul' is strictly element-wise in your implementation
         Vector v = new Vector(new float[] { 2.0f, -1.0f, 3.0f });
         PythonResult r3 = new PythonBuilder()
-            .append(MAT_A_DEF)
+            .append(A_PY)
             .append("v = np.array([2.0, -1.0, 3.0])")
             .append("c = a * v")
             .execute("c");
@@ -418,15 +414,15 @@ class MatrixTest {
     
     @Test
     void testDivide() throws Exception {
-        Matrix A = new Matrix(new float[][] { { 2f, 6f, -10f }, { 4f, 8f, -12f } });
+        final Matrix E = new Matrix(new float[][] { { 2f, 6f, -10f }, { 4f, 8f, -12f } });
         
         // 1. Matrix / Scalar
         Scalar s = new Scalar(-2f);
         PythonResult r1 = new PythonBuilder()
-            .append("a = np.array([[2.0, 6.0, -10.0],[4.0, 8.0, -12.0]])")
-            .append("c = a / -2.0")
+            .append("e = np.array([[2.0, 6.0, -10.0],[4.0, 8.0, -12.0]])")
+            .append("c = e / -2.0")
             .execute("c");
-        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.divide(s)).values);
+        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) E.divide(s)).values);
         
         // 2. Matrix / Vector (Broadcasting)
         Matrix D2 = new Matrix(new float[][] { { 2f, 6f, -8f }, { 4f, 12f, 16f } });
@@ -451,10 +447,9 @@ class MatrixTest {
     
     @Test
     void testTranspose() throws Exception {
-        Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
-        
+        final Matrix A = new Matrix(new float[][] { { 1f, 2f, 3f }, { 4f, 5f, 6f } });
         PythonResult r = new PythonBuilder()
-            .append(MAT_A_DEF)
+            .append(A_PY)
             .append("c = a.T")
             .execute("c");
         assertArrayEquals((Object[]) r.parseToFloat(), ((Matrix) A.transpose()).values);

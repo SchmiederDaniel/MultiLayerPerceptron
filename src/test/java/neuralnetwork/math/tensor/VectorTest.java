@@ -1,9 +1,5 @@
 package neuralnetwork.math.tensor;
 
-import neuralnetwork.math.tensor.Matrix;
-import neuralnetwork.math.tensor.Scalar;
-import neuralnetwork.math.tensor.Tensor;
-import neuralnetwork.math.tensor.Vector;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -130,13 +126,15 @@ class VectorTest {
         assertNotSame(a.values, b.values);
     }
     
+    private static final String A_PY = "a = np.array([1.0, 2.0, 3.0])";
+    
     @Test
     void python_vector_scalar_ops_compare_with_java() throws Exception {
         Vector a = new Vector(new float[] { 1f, 2f, 3f });
         Scalar s = new Scalar(3.5f);
         // add
         PythonResult r1 = new PythonBuilder()
-            .append("a = np.array([1.0, 2.0, 3.0])")
+            .append(A_PY)
             .append("c = a + 3.5")
             .execute("c");
         float[] py1 = to1D(r1.parseToFloat());
@@ -144,7 +142,7 @@ class VectorTest {
         
         // subtract
         PythonResult r2 = new PythonBuilder()
-            .append("a = np.array([1.0, 2.0, 3.0])")
+            .append(A_PY)
             .append("c = a - 3.5")
             .execute("c");
         float[] py2 = to1D(r2.parseToFloat());
@@ -152,7 +150,7 @@ class VectorTest {
         
         // mul
         PythonResult r3 = new PythonBuilder()
-            .append("a = np.array([1.0, 2.0, 3.0])")
+            .append(A_PY)
             .append("c = a * -3.5")
             .execute("c");
         float[] py3 = to1D(r3.parseToFloat());
@@ -174,7 +172,7 @@ class VectorTest {
         Vector b = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
         // add
         PythonResult r1 = new PythonBuilder()
-            .append("a = np.array([1.0, 2.0, 3.0])")
+            .append(A_PY)
             .append("b = np.array([2.5, -2.5, 2.5])")
             .append("c = a + b")
             .execute("c");
@@ -183,7 +181,7 @@ class VectorTest {
         
         // subtract
         PythonResult r2 = new PythonBuilder()
-            .append("a = np.array([1.0, 2.0, 3.0])")
+            .append(A_PY)
             .append("b = np.array([2.5, -2.5, 2.5])")
             .append("c = a - b")
             .execute("c");
@@ -192,7 +190,7 @@ class VectorTest {
         
         // elementwise mul
         PythonResult r3 = new PythonBuilder()
-            .append("a = np.array([1.0, 2.0, 3.0])")
+            .append(A_PY)
             .append("b = np.array([2.0, -3.0, 4.0])")
             .append("c = a * b")
             .execute("c");
