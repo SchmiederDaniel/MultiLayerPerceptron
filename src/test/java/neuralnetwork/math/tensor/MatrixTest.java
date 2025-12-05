@@ -22,7 +22,7 @@ class MatrixTest {
         assertArrayEquals(new float[][] {
             { 4.5f, 5.5f, 6.5f },
             { 7.5f, 8.5f, 9.5f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
         
         // Testing for vector (broadcasting)
         a = new Matrix(new float[][] {
@@ -35,7 +35,7 @@ class MatrixTest {
         assertArrayEquals(new float[][] {
             { 3.5f, -0.5f, 5.5f },
             { 6.5f, 2.5f, 8.5f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
         
         // Testing for matrix
         a = new Matrix(new float[][] {
@@ -51,7 +51,7 @@ class MatrixTest {
         assertArrayEquals(new float[][] {
             { 3f, 1f, 6f },
             { 2f, 6f, 3f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
     }
     
     @Test
@@ -67,7 +67,7 @@ class MatrixTest {
         assertArrayEquals(new float[][] {
             { 4.5f, 5.5f, 6.5f },
             { 7.5f, 8.5f, 9.5f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
         
         // Testing for vector (broadcasting)
         a = new Matrix(new float[][] {
@@ -80,7 +80,7 @@ class MatrixTest {
         assertArrayEquals(new float[][] {
             { -1.5f, 4.5f, 0.5f },
             { 1.5f, 7.5f, 3.5f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
         
         // Testing for matrix
         a = new Matrix(new float[][] {
@@ -96,7 +96,7 @@ class MatrixTest {
         assertArrayEquals(new float[][] {
             { -1f, 3f, 0f },
             { 6f, 4f, 9f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
     }
     
     @Test
@@ -107,12 +107,12 @@ class MatrixTest {
             { 4f, 5f, 6f }
         });
         Tensor b = new Scalar(-2f);
-        Tensor c = a.mul(b);
+        Tensor c = a.multiply(b);
         assertInstanceOf(Matrix.class, c);
         assertArrayEquals(new float[][] {
             { -2f, -4f, -6f },
             { -8f, -10f, -12f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
         
         // Testing for vector (matrix-vector multiplication)
         a = new Matrix(new float[][] {
@@ -120,9 +120,9 @@ class MatrixTest {
             { 4f, 5f, 6f }
         });
         b = new Vector(new float[] { 2f, -3f, 4f });
-        c = a.mul(b);
+        c = a.matmul(b);
         assertInstanceOf(Vector.class, c);
-        assertArrayEquals(new float[] { 8f, 17f }, ((Vector) c).values);
+        assertArrayEquals(new float[] { 8f, 17f }, ((Vector) c).getValues());
         
         // Testing for matrix (matrix-matrix multiplication)
         a = new Matrix(new float[][] {
@@ -133,44 +133,33 @@ class MatrixTest {
             { 2f, 0f },
             { 1f, 3f }
         });
-        c = a.mul(b);
+        c = a.matmul(b);
         assertInstanceOf(Matrix.class, c);
         assertArrayEquals(new float[][] {
             { 4f, 6f },
             { 10f, 12f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
     }
     
     @Test
     void matmul() {
-        // Testing for scalar
+        // Now matmul is linear algebra
         Matrix a = new Matrix(new float[][] {
             { 1f, 2f, 3f },
             { 4f, 5f, 6f }
         });
-        Tensor b = new Scalar(-2f);
-        Tensor c = a.matmul(b);
-        assertInstanceOf(Matrix.class, c);
-        assertArrayEquals(new float[][] {
-            { -2f, -4f, -6f },
-            { -8f, -10f, -12f }
-        }, ((Matrix) c).values);
-        
-        // Testing for matrix (element-wise multiplication)
-        a = new Matrix(new float[][] {
-            { 1f, 2f, 3f },
-            { 4f, 5f, 6f }
+        Vector v = new Vector(new float[] { 2f, -3f, 4f });
+        Tensor c = a.matmul(v);
+        assertInstanceOf(Vector.class, c);
+        assertArrayEquals(new float[] { 8f, 17f }, ((Vector) c).getValues());
+        Matrix m2 = new Matrix(new float[][] {
+            { 2f, 0f },
+            { 1f, 3f },
+            { -1f, 2f }
         });
-        b = new Matrix(new float[][] {
-            { 2f, -1f, 3f },
-            { -2f, 1f, -3f }
-        });
-        c = a.matmul(b);
-        assertInstanceOf(Matrix.class, c);
-        assertArrayEquals(new float[][] {
-            { 2f, -2f, 9f },
-            { -8f, 5f, -18f }
-        }, ((Matrix) c).values);
+        Tensor c2 = a.matmul(m2);
+        assertInstanceOf(Matrix.class, c2);
+        assertArrayEquals(new float[][] { { 1f, 12f }, { 7f, 27f } }, ((Matrix) c2).getValues());
     }
     
     @Test
@@ -186,7 +175,7 @@ class MatrixTest {
         assertArrayEquals(new float[][] {
             { -1f, -3f, 5f },
             { -2f, -4f, 6f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
         
         // Testing for vector (broadcasting)
         a = new Matrix(new float[][] {
@@ -199,7 +188,7 @@ class MatrixTest {
         assertArrayEquals(new float[][] {
             { 1f, -2f, -2f },
             { 2f, -4f, 4f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
         
         // Testing for matrix
         a = new Matrix(new float[][] {
@@ -215,7 +204,7 @@ class MatrixTest {
         assertArrayEquals(new float[][] {
             { 3f, -3f, -3f },
             { 2f, 2f, -5f }
-        }, ((Matrix) c).values);
+        }, ((Matrix) c).getValues());
     }
     
     @Test
@@ -229,7 +218,7 @@ class MatrixTest {
             { 1f, 4f },
             { 2f, 5f },
             { 3f, 6f }
-        }, result.values);
+        }, result.getValues());
     }
     
     @Test
@@ -248,7 +237,7 @@ class MatrixTest {
             { 2.5f, 2.5f, 2.5f }
         }));
         
-        assertArrayEquals(a.values, b.values);
+        assertArrayEquals(a.getValues(), b.getValues());
         assertEquals(a, c);
         assertNotEquals(new Matrix(new float[][] {
             { 1f, 2f },
@@ -268,8 +257,8 @@ class MatrixTest {
             { 2.5f, 2.5f, 2.5f }
         }));
         
-        assertArrayEquals(a.values, b.values);
-        assertNotSame(a.values, b.values);
+        assertArrayEquals(a.getValues(), b.getValues());
+        assertNotSame(a.getValues(), b.getValues());
     }
     
     // Helper for setup to keep tests clean
@@ -286,7 +275,7 @@ class MatrixTest {
             .append(A_PY)
             .append("c = a + 3.5")
             .execute("c");
-        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.add(s)).values);
+        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.add(s)).getValues());
         
         // 2. Matrix + Vector (Broadcasting)
         Vector v = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
@@ -295,7 +284,7 @@ class MatrixTest {
             .append("v = np.array([2.5, -2.5, 2.5])")
             .append("c = a + v")
             .execute("c");
-        assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.add(v)).values);
+        assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.add(v)).getValues());
         
         // 3. Matrix + Matrix (Element-wise)
         PythonResult r3 = new PythonBuilder()
@@ -303,7 +292,7 @@ class MatrixTest {
             .append(B_PY)
             .append("c = a + b")
             .execute("c");
-        assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.add(B)).values);
+        assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.add(B)).getValues());
     }
     
     @Test
@@ -315,7 +304,7 @@ class MatrixTest {
             .append(A_PY)
             .append("c = a - (-3.5)")
             .execute("c");
-        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.subtract(s)).values);
+        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.subtract(s)).getValues());
         
         // 2. Matrix - Vector (Broadcasting)
         Vector v = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
@@ -324,7 +313,7 @@ class MatrixTest {
             .append("v = np.array([2.5, -2.5, 2.5])")
             .append("c = a - v")
             .execute("c");
-        assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.subtract(v)).values);
+        assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.subtract(v)).getValues());
         
         // 3. Matrix - Matrix
         PythonResult r3 = new PythonBuilder()
@@ -332,7 +321,7 @@ class MatrixTest {
             .append(B_PY)
             .append("c = a - b")
             .execute("c");
-        assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.subtract(B)).values);
+        assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.subtract(B)).getValues());
     }
     
     @Test
@@ -349,7 +338,7 @@ class MatrixTest {
             .append(A_PY)
             .append("c = a * -2.0") // Numpy * is element-wise
             .execute("c");
-        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.mul(s)).values);
+        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.multiply(s)).getValues());
         
         // 2. Matrix * Vector (Dot Product -> Result is Vector)
         Vector v = new Vector(new float[] { 2f, -3f, 4f });
@@ -359,7 +348,7 @@ class MatrixTest {
             .append("c = a @ v") // Numpy @ is matmul/dot
             .execute("c");
         // Note: Result of Matrix (2x3) @ Vector (3) is Vector (2), so we use to1D
-        assertArrayEquals((float[]) r2.parseToFloat(), ((Vector) A.mul(v)).values);
+        assertArrayEquals((float[]) r2.parseToFloat(), ((Vector) A.matmul(v)).getValues());
         
         // 3. Matrix * Matrix (Matrix Multiplication / Dot Product)
         Matrix M1 = new Matrix(new float[][] { { 1f, 2f }, { 3f, 4f } });
@@ -369,7 +358,7 @@ class MatrixTest {
             .append("m2 = np.array([[2.0, 0.0],[1.0, 3.0]])")
             .append("c = m1 @ m2") // Numpy @ operator
             .execute("c");
-        assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) M1.mul(M2)).values);
+        assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) M1.matmul(M2)).getValues());
     }
     
     @Test
@@ -386,7 +375,7 @@ class MatrixTest {
             .append(A_PY)
             .append("c = a * -2.0")
             .execute("c");
-        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.matmul(s)).values);
+        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.multiply(s)).getValues());
         
         // 2. Matrix .matmul Matrix (Element-wise)
         PythonResult r2 = new PythonBuilder()
@@ -394,7 +383,7 @@ class MatrixTest {
             .append(B_PY)
             .append("c = a * b") // Numpy * is element-wise
             .execute("c");
-        assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.matmul(B)).values);
+        assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) A.multiply(B)).getValues());
     }
     
     @Disabled("Skipping temporarily due to not being implemented yet in Matrix.java")
@@ -409,7 +398,7 @@ class MatrixTest {
             .append("v = np.array([2.0, -1.0, 3.0])")
             .append("c = a * v")
             .execute("c");
-        assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.matmul(v)).values);
+        assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) A.multiply(v)).getValues());
     }
     
     @Test
@@ -422,7 +411,7 @@ class MatrixTest {
             .append("e = np.array([[2.0, 6.0, -10.0],[4.0, 8.0, -12.0]])")
             .append("c = e / -2.0")
             .execute("c");
-        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) E.divide(s)).values);
+        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) E.divide(s)).getValues());
         
         // 2. Matrix / Vector (Broadcasting)
         Matrix D2 = new Matrix(new float[][] { { 2f, 6f, -8f }, { 4f, 12f, 16f } });
@@ -432,7 +421,7 @@ class MatrixTest {
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a / v")
             .execute("c");
-        assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) D2.divide(v)).values);
+        assertArrayEquals((Object[]) r2.parseToFloat(), ((Matrix) D2.divide(v)).getValues());
         
         // 3. Matrix / Matrix (Element-wise)
         Matrix N = new Matrix(new float[][] { { 6f, 9f, -12f }, { 8f, 10f, 15f } });
@@ -442,7 +431,7 @@ class MatrixTest {
             .append("d = np.array([[2.0, -3.0, 4.0],[4.0, 5.0, -3.0]])")
             .append("c = n / d")
             .execute("c");
-        assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) N.divide(D)).values);
+        assertArrayEquals((Object[]) r3.parseToFloat(), ((Matrix) N.divide(D)).getValues());
     }
     
     @Test
@@ -452,6 +441,6 @@ class MatrixTest {
             .append(A_PY)
             .append("c = a.T")
             .execute("c");
-        assertArrayEquals((Object[]) r.parseToFloat(), ((Matrix) A.transpose()).values);
+        assertArrayEquals((Object[]) r.parseToFloat(), ((Matrix) A.transpose()).getValues());
     }
 }

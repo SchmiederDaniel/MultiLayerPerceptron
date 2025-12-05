@@ -21,7 +21,7 @@ class Tensor3DTest {
             .append(A3_PY)
             .append("c = a + 2.5")
             .execute("c");
-        assertArrayEquals((Object[]) rAddS.parseToFloat(), ((Tensor3D) A.add(s)).values);
+        assertArrayEquals((Object[]) rAddS.parseToFloat(), ((Tensor3D) A.add(s)).getValues());
 
         // + Vector (broadcast along last dim)
         Vector v = new Vector(new float[] { 2f, -3f, 4f });
@@ -30,7 +30,7 @@ class Tensor3DTest {
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a + v")
             .execute("c");
-        assertArrayEquals((Object[]) rAddV.parseToFloat(), ((Tensor3D) A.add(v)).values);
+        assertArrayEquals((Object[]) rAddV.parseToFloat(), ((Tensor3D) A.add(v)).getValues());
 
         // + Matrix (broadcast across first dim)
         Matrix mSame = new Matrix(new float[][] { { 1f, -1f, 0f }, { 0.5f, 0.5f, -0.5f } });
@@ -39,7 +39,7 @@ class Tensor3DTest {
             .append("m = np.array([[1.0, -1.0, 0.0],[0.5, 0.5, -0.5]])")
             .append("c = a + m")
             .execute("c");
-        assertArrayEquals((Object[]) rAddM.parseToFloat(), ((Tensor3D) A.add(mSame)).values);
+        assertArrayEquals((Object[]) rAddM.parseToFloat(), ((Tensor3D) A.add(mSame)).getValues());
 
         // element-wise matmul with same-shape 3D
         Tensor3D B = new Tensor3D(new float[][][] {
@@ -51,7 +51,7 @@ class Tensor3DTest {
             .append("b = np.array([[[2.0,-1.0,0.5],[3.0,0.5,-2.0]],[[-1.0,2.0,3.0],[0.5,1.5,-0.5]]])")
             .append("c = a * b")
             .execute("c");
-        assertArrayEquals((Object[]) rHad.parseToFloat(), ((Tensor3D) A.matmul(B)).values);
+        assertArrayEquals((Object[]) rHad.parseToFloat(), ((Tensor3D) A.multiply(B)).getValues());
 
         // divide by vector (broadcast)
         PythonResult rDivV = new PythonBuilder()
@@ -59,7 +59,7 @@ class Tensor3DTest {
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a / v")
             .execute("c");
-        assertArrayEquals((Object[]) rDivV.parseToFloat(), ((Tensor3D) A.divide(v)).values);
+        assertArrayEquals((Object[]) rDivV.parseToFloat(), ((Tensor3D) A.divide(v)).getValues());
     }
 
     @Test
@@ -76,7 +76,7 @@ class Tensor3DTest {
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a @ v")
             .execute("c");
-        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.mul(v)).values);
+        assertArrayEquals((Object[]) r1.parseToFloat(), ((Matrix) A.matmul(v)).getValues());
 
         // A (2,2,3) * M(3,2) => (2,2,2) Tensor3D using matmul per batch
         Matrix m = new Matrix(new float[][] { { 2f, 0f }, { 1f, 3f }, { -1f, 2f } });
@@ -85,7 +85,7 @@ class Tensor3DTest {
             .append("M = np.array([[2.0, 0.0],[1.0, 3.0],[-1.0, 2.0]])")
             .append("c = a @ M")
             .execute("c");
-        assertArrayEquals((Object[]) r2.parseToFloat(), ((Tensor3D) A.mul(m)).values);
+        assertArrayEquals((Object[]) r2.parseToFloat(), ((Tensor3D) A.matmul(m)).getValues());
 
         // A (2,2,3) * B(2,3,2) => (2,2,2) batched matmul
         Tensor3D B = new Tensor3D(new float[][][] {
@@ -97,7 +97,7 @@ class Tensor3DTest {
             .append("B = np.array([[[1.0,0.0],[0.0,1.0],[1.0,1.0]],[[-1.0,2.0],[0.0,1.0],[2.0,-1.0]]])")
             .append("c = np.matmul(a, B)")
             .execute("c");
-        assertArrayEquals((Object[]) r3.parseToFloat(), ((Tensor3D) A.mul(B)).values);
+        assertArrayEquals((Object[]) r3.parseToFloat(), ((Tensor3D) A.matmul(B)).getValues());
     }
 
     @Test
@@ -110,6 +110,6 @@ class Tensor3DTest {
             .append(A3_PY)
             .append("c = np.transpose(a, (0,2,1))")
             .execute("c");
-        assertArrayEquals((Object[]) r.parseToFloat(), ((Tensor3D) A.transpose()).values);
+        assertArrayEquals((Object[]) r.parseToFloat(), ((Tensor3D) A.transpose()).getValues());
     }
 }

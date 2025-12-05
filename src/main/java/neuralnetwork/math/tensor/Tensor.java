@@ -1,118 +1,233 @@
 package neuralnetwork.math.tensor;
 
+import java.util.Arrays;
+
 
 public abstract class Tensor {
+    /**
+     * Enable or disable shape validation in runtime. When true, operations check
+     * shape compatibility and throw {@link IllegalArgumentException} on mismatch.
+     * Keep false for maximal performance.
+     */
+    public static boolean ENABLE_SHAPE_CHECKS = false;
+
+    /**
+     * Apply a unary operation element‑wise and return a new tensor (no in‑place).
+     */
     abstract Tensor applyOperation(FloatOperator operation);
     
+    /** Add two tensors (with broadcasting when supported). */
     abstract Tensor add(Tensor tensor);
     
+    /** Subtract tensors (this - tensor) with broadcasting when supported. */
     abstract Tensor subtract(Tensor tensor);
     
     /**
-     * Applies a Hadamard product between two tensors of the same shape.
+     * Element‑wise (Hadamard) multiplication.
      *
-     * <p>Numpy Example:</p>
-     * <pre>{@code
-     * a = np.array([[1, 2, 3], [1, 2, 3]])
-     * b = np.array([3, 2, 4])
-     * a * b = [3 4 12]
-     * a.__mul__(b) = [3 4 12]
-     * }</pre>
+     * NumPy equivalence:
+     * - Python: `c = a * b`
+     * - Java: `c = a.multiply(b)`
      *
-     * <p>Example:</p>
-     * <pre>{@code
-     * // Two tensors with matching dimensions (both 2x3)
-     * Tensor a = Tensor.of(new float[][]{
-     *     {1, 2, 3},
-     *     {1, 2, 3}
-     * });
-     * Tensor b = Tensor.of(new float[][]{
-     *     {3, 2, 4}
-     * });
-     * // Valid: shapes match (2x3 ⊙ 1x3)
-     * Tensor c = a.matmul(b);
-     * }</pre>
-     *
-     * @param tensor
-     * @return The result of the Hadamard multiplication.
+     * Shapes: must be equal or broadcastable (depending on implementation). Returns a new tensor.
      */
-    abstract Tensor mul(Tensor tensor);
-    
+    abstract Tensor multiply(Tensor tensor);
+
     /**
-     * Applies matrix multiplication with two tensors.
+     * Matrix/tensor multiplication (linear algebra over the last dims).
      *
-     * <p>Dimension requirement: both tensors must have identical shapes.
-     * For example, a 2x3 tensor can only be multiplied element-wise with
-     * another 2x3 tensor.</p>
-     * 
-     * <p>Numpy Example:</p>
-     * <pre>{@code
-     * a = np.array([1, 2, 3])
-     * b = np.array([[3], [2], [4]])
+     * NumPy equivalence:
+     * - Python: `c = a @ b` or `np.matmul(a, b)`
+     * - Java: `c = a.matmul(b)`
      *
-     * a @ b = [[3, 2, 4], [6, 4, 8], [9, 6, 12]]
-     * a.__matmul__(b) = [[3, 2, 4], [6, 4, 8], [9, 6, 12]]
-     * }</pre>
-     * @param tensor The other tensor, which must have the same shape as this tensor
-     * @return The element-wise (Hadamard) product
+     * Examples:
+     * - Vector/matrix: `np.array([[1,2,3]]) @ np.array([[1],[2],[3]])`
+     * - Matrix/matrix: `np.array([[1,2],[3,4]]) @ np.array([[5,6],[7,8]])`
+     * - Batched (Tensor3D/4D): multiplication applies to the last two dims for each batch index.
      */
     abstract Tensor matmul(Tensor tensor);
-    
+
+    /** Divide tensors (this / tensor) with broadcasting when supported. */
     abstract Tensor divide(Tensor tensor);
     
     /**
-     * Creates a tensor of the same shape and fills it with a given value.
-     *
-     * @param value
-     * @return
+     * Fill a copy of this tensor's shape with a constant value.
      */
     public Tensor copyFill(float value) {
         return this.applyOperation(_ -> value);
     }
     
+    /** Transpose: swap last two axes (for Matrix/Tensor3D/Tensor4D). */
     abstract Tensor transpose();
     
-    /**
-     * Copies a tensor object without reference.
-     *
-     * @return
-     */
+    /** Deep copy (no shared backing arrays). */
     abstract Tensor deepCopy();
     
+    /** Type name (Scalar, Vector, Matrix, Tensor3D, Tensor4D). */
     abstract String type();
-    
-    public static Scalar of(double value) {
-        return new Scalar((float) value);
+
+    /** Return the NumPy‑style shape. */
+    public abstract int[] shape();
+
+    /** Rank/ndim (length of shape array). */
+    public int rank() { return shape().length; }
+
+    /** Total number of elements. */
+    public long size() {
+        int[] s = shape();
+        long n = 1L;
+        for (int v : s) n *= v;
+        return n;
     }
-    
+
+    // ---- Factory helpers (non in‑place) ----
+    public static Scalar of(double value) { return new Scalar((float) value); }
     public static Vector of(double... values) {
         float[] result = new float[values.length];
-        for (int i = 0; i < values.length; i++)
-            result[i] = (float) values[i];
+        for (int i = 0; i < values.length; i++) result[i] = (float) values[i];
         return new Vector(result);
     }
-    
-    public static Scalar of(float value) {
-        return new Scalar(value);
+    public static Scalar of(float value) { return new Scalar(value); }
+    public static Vector of(float... values) { return new Vector(values); }
+    public static Matrix of(float[][] values) { return new Matrix(values); }
+    public static Tensor3D of(float[][][] values) { return new Tensor3D(values); }
+    public static Tensor4D of(float[][][][] values) { return new Tensor4D(values); }
+
+    /** Identity matrix of size n. */
+    public static Matrix eye(int n) {
+        float[][] v = new float[n][n];
+        for (int i = 0; i < n; i++) v[i][i] = 1f;
+        return new Matrix(v);
     }
-    
-    public static Vector of(float... values) {
-        return new Vector(values);
+
+    /** arange(stop): 0,1,2,...,stop-1 */
+    public static Vector arange(int stop) {
+        float[] v = new float[stop];
+        for (int i = 0; i < stop; i++) v[i] = i;
+        return new Vector(v);
     }
-    
-    public static Matrix of(float[][] values) {
-        return new Matrix(values);
+
+    /** arange(start, stop, step) similar to NumPy (stop exclusive). */
+    public static Vector arange(float start, float stop, float step) {
+        if (step == 0f) throw new IllegalArgumentException("step must not be 0");
+        int n = (int) Math.max(0, Math.ceil((stop - start) / step));
+        float[] v = new float[n];
+        float cur = start;
+        for (int i = 0; i < n; i++, cur += step) v[i] = cur;
+        return new Vector(v);
     }
-    
-    public static Tensor3D of(float[][][] values) {
-        return new Tensor3D(values);
+
+    /** full(shape,value) up to rank 4; shape.length==0 returns Scalar. */
+    public static Tensor full(int[] shape, float value) {
+        switch (shape.length) {
+            case 0: return new Scalar(value);
+            case 1: {
+                float[] a = new float[shape[0]];
+                Arrays.fill(a, value);
+                return new Vector(a);
+            }
+            case 2: {
+                float[][] a = new float[shape[0]][shape[1]];
+                for (int i = 0; i < shape[0]; i++) Arrays.fill(a[i], value);
+                return new Matrix(a);
+            }
+            case 3: {
+                float[][][] a = new float[shape[0]][shape[1]][shape[2]];
+                for (int i = 0; i < shape[0]; i++)
+                    for (int j = 0; j < shape[1]; j++)
+                        Arrays.fill(a[i][j], value);
+                return new Tensor3D(a);
+            }
+            case 4: {
+                float[][][][] a = new float[shape[0]][shape[1]][shape[2]][shape[3]];
+                for (int i = 0; i < shape[0]; i++)
+                    for (int j = 0; j < shape[1]; j++)
+                        for (int k = 0; k < shape[2]; k++)
+                            Arrays.fill(a[i][j][k], value);
+                return new Tensor4D(a);
+            }
+            default:
+                throw new IllegalArgumentException("Only ranks 0..4 supported in full()");
+        }
     }
-    
-    public static Tensor4D of(float[][][][] values) {
-        return new Tensor4D(values);
+
+    /** Flatten (copy) to a 1D Vector in row‑major order. */
+    public Vector flatten() {
+        float[] out = new float[(int) size()];
+        // Default implementation: rely on transpose + getters in subclasses
+        // Subclasses may override for efficiency.
+        int idx = 0;
+        int[] s = shape();
+        if (s.length == 0) {
+            out[idx++] = ((Scalar) this).get();
+        } else if (s.length == 1) {
+            float[] a = ((Vector) this).getValues();
+            System.arraycopy(a, 0, out, 0, a.length);
+        } else if (s.length == 2) {
+            float[][] a = ((Matrix) this).getValues();
+            for (int i = 0; i < a.length; i++) {
+                System.arraycopy(a[i], 0, out, idx, a[i].length);
+                idx += a[i].length;
+            }
+        } else if (s.length == 3) {
+            float[][][] a = ((Tensor3D) this).getValues();
+            for (int i = 0; i < a.length; i++)
+                for (int j = 0; j < a[0].length; j++) {
+                    System.arraycopy(a[i][j], 0, out, idx, a[i][j].length);
+                    idx += a[i][j].length;
+                }
+        } else if (s.length == 4) {
+            float[][][][] a = ((Tensor4D) this).getValues();
+            for (int i = 0; i < a.length; i++)
+                for (int j = 0; j < a[0].length; j++)
+                    for (int k = 0; k < a[0][0].length; k++) {
+                        System.arraycopy(a[i][j][k], 0, out, idx, a[i][j][k].length);
+                        idx += a[i][j][k].length;
+                    }
+        }
+        return new Vector(out);
+    }
+
+    /** Alias for flatten (NumPy ravel returns a view; here we return a copy). */
+    public Vector ravel() { return flatten(); }
+
+    /**
+     * Returns the values of this tensor as a flattened float[] in row-major order.
+     * The returned array is a new contiguous copy and does not share storage with the original tensor.
+     */
+    public float[] toFlatArray() {
+        return flatten().getValues();
+    }
+
+    /** General axis permutation. Subclasses implement for their rank; default not supported. */
+    public Tensor permute(int... axes) {
+        throw new UnsupportedOperationException("permute not supported for " + type());
+    }
+
+    // ---- Optional: minimal einsum for common cases ----
+    public static Tensor einsum(String pattern, Tensor a, Tensor b) {
+        // Very small subset: "ij,j->i" and "ij,jk->ik" and batched "bij,bjk->bik"
+        pattern = pattern.replace(" ", "");
+        if ("ij,j->i".equals(pattern) && a instanceof Matrix ma && b instanceof Vector vb) {
+            return ma.matmul(vb);
+        }
+        if ("ij,jk->ik".equals(pattern) && a instanceof Matrix ma2 && b instanceof Matrix mb2) {
+            return ma2.matmul(mb2);
+        }
+        if ("bij,bjk->bik".equals(pattern) && a instanceof Tensor3D ta && b instanceof Tensor3D tb) {
+            return ta.matmul(tb);
+        }
+        if ("...ij,...jk->...ik".equals(pattern) && a instanceof Tensor4D ta4 && b instanceof Tensor4D tb4) {
+            return ta4.matmul(tb4);
+        }
+        throw new UnsupportedOperationException("einsum pattern not supported: " + pattern);
+    }
+
+    @Override
+    public String toString() {
+        return type() + "(shape=" + java.util.Arrays.toString(shape()) + ")";
     }
     
     public static void main(String[] args) {
-
     }
 }

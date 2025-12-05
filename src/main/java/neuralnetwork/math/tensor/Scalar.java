@@ -1,7 +1,7 @@
 package neuralnetwork.math.tensor;
 
 public class Scalar extends Tensor {
-    public final float value;
+    private final float value;
     
     public Scalar(float value) {
         this.value = value;
@@ -23,13 +23,13 @@ public class Scalar extends Tensor {
     }
     
     @Override
-    public Tensor mul(Tensor tensor) {
+    public Tensor multiply(Tensor tensor) {
         return tensor.applyOperation(a -> this.value * a);
     }
     
     @Override
     public Tensor matmul(Tensor tensor) {
-        return this.mul(tensor);
+        throw new IllegalArgumentException("Scalar does not support matmul (@) in NumPy semantics");
     }
     
     @Override
@@ -54,7 +54,7 @@ public class Scalar extends Tensor {
     
     @Override
     public String toString() {
-        return type();
+        return super.toString();
     }
     
     @Override
@@ -63,5 +63,17 @@ public class Scalar extends Tensor {
             return Float.compare(scalar.value, value) == 0;
         }
         return false;
+    }
+
+    public float get() { return value; }
+
+    @Override
+    public int[] shape() { return new int[0]; }
+
+    @Override
+    public Tensor permute(int... axes) {
+        if (axes != null && axes.length != 0)
+            throw new IllegalArgumentException("Scalar permute expects 0 axes");
+        return deepCopy();
     }
 }

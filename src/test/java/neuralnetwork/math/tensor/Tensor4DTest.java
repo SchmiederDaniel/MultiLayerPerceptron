@@ -31,7 +31,7 @@ class Tensor4DTest {
             .append(A4_PY)
             .append("c = a + 2.5")
             .execute("c");
-        assertArrayEquals((Object[]) rAddS.parseToFloat(), ((Tensor4D) A.add(new Scalar(2.5f))).values);
+        assertArrayEquals((Object[]) rAddS.parseToFloat(), ((Tensor4D) A.add(new Scalar(2.5f))).getValues());
 
         // + Vector (broadcast along last dim)
         Vector v = new Vector(new float[] { 2f, -3f, 4f });
@@ -40,7 +40,7 @@ class Tensor4DTest {
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a + v")
             .execute("c");
-        assertArrayEquals((Object[]) rAddV.parseToFloat(), ((Tensor4D) A.add(v)).values);
+        assertArrayEquals((Object[]) rAddV.parseToFloat(), ((Tensor4D) A.add(v)).getValues());
 
         // + Matrix (broadcast along first two dims)
         Matrix M = new Matrix(new float[][] { { 1f, -1f, 0.5f }, { -0.5f, 0.5f, -1.5f } });
@@ -49,7 +49,7 @@ class Tensor4DTest {
             .append("M = np.array([[1.0, -1.0, 0.5],[-0.5, 0.5, -1.5]])")
             .append("c = a + M")
             .execute("c");
-        assertArrayEquals((Object[]) rAddM.parseToFloat(), ((Tensor4D) A.add(M)).values);
+        assertArrayEquals((Object[]) rAddM.parseToFloat(), ((Tensor4D) A.add(M)).getValues());
 
         // + Tensor3D broadcast across first dimension (batch)
         Tensor3D T3 = new Tensor3D(new float[][][] {
@@ -61,16 +61,16 @@ class Tensor4DTest {
             .append("T3 = np.array([[[1.0,0.0,-1.0],[0.5,-0.5,1.5]],[[-2.0,2.0,0.0],[1.0,-1.0,0.0]]])")
             .append("c = a + T3")
             .execute("c");
-        assertArrayEquals((Object[]) rAddT3.parseToFloat(), ((Tensor4D) A.add(T3)).values);
+        assertArrayEquals((Object[]) rAddT3.parseToFloat(), ((Tensor4D) A.add(T3)).getValues());
 
-        // Hadamard matmul
+        // Hadamard (element-wise)
         Tensor4D B4 = buildA();
         PythonResult rHad = new PythonBuilder()
             .append(A4_PY)
             .append("b = " + A4_PY.substring("a = ".length()))
             .append("c = a * b")
             .execute("c");
-        assertArrayEquals((Object[]) rHad.parseToFloat(), ((Tensor4D) A.matmul(B4)).values);
+        assertArrayEquals((Object[]) rHad.parseToFloat(), ((Tensor4D) A.multiply(B4)).getValues());
 
         // Divide by vector broadcast
         PythonResult rDiv = new PythonBuilder()
@@ -78,7 +78,7 @@ class Tensor4DTest {
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = a / v")
             .execute("c");
-        assertArrayEquals((Object[]) rDiv.parseToFloat(), ((Tensor4D) A.divide(v)).values);
+        assertArrayEquals((Object[]) rDiv.parseToFloat(), ((Tensor4D) A.divide(v)).getValues());
     }
 
     @Test
@@ -92,7 +92,7 @@ class Tensor4DTest {
             .append("v = np.array([2.0, -3.0, 4.0])")
             .append("c = np.matmul(a, v)")
             .execute("c");
-        assertArrayEquals((Object[]) r1.parseToFloat(), ((Tensor3D) A.mul(v)).values);
+        assertArrayEquals((Object[]) r1.parseToFloat(), ((Tensor3D) A.matmul(v)).getValues());
 
         // A (2,2,2,3) @ M(3,2) -> (2,2,2,2)
         Matrix M = new Matrix(new float[][] { { 2f, 0f }, { 1f, 3f }, { -1f, 2f } });
@@ -101,7 +101,7 @@ class Tensor4DTest {
             .append("M = np.array([[2.0, 0.0],[1.0, 3.0],[-1.0, 2.0]])")
             .append("c = np.matmul(a, M)")
             .execute("c");
-        assertArrayEquals((Object[]) r2.parseToFloat(), ((Tensor4D) A.mul(M)).values);
+        assertArrayEquals((Object[]) r2.parseToFloat(), ((Tensor4D) A.matmul(M)).getValues());
 
         // A (2,2,2,3) @ B(2,2,3,2) -> (2,2,2,2)
         Tensor4D B4 = new Tensor4D(new float[][][][] {
@@ -119,7 +119,7 @@ class Tensor4DTest {
             .append("B = np.array([[[[1.0,0.0],[0.0,1.0],[1.0,1.0]], [[-1.0,2.0],[0.0,1.0],[2.0,-1.0]]], [[[0.0,1.0],[1.0,0.0],[-1.0,1.0]], [[2.0,-2.0],[1.0,1.0],[0.0,1.0]]]])")
             .append("c = np.matmul(a, B)")
             .execute("c");
-        assertArrayEquals((Object[]) r3.parseToFloat(), ((Tensor4D) A.mul(B4)).values);
+        assertArrayEquals((Object[]) r3.parseToFloat(), ((Tensor4D) A.matmul(B4)).getValues());
     }
 
     @Test
@@ -129,6 +129,6 @@ class Tensor4DTest {
             .append(A4_PY)
             .append("c = np.transpose(a, (0,1,3,2))")
             .execute("c");
-        assertArrayEquals((Object[]) r.parseToFloat(), ((Tensor4D) A.transpose()).values);
+        assertArrayEquals((Object[]) r.parseToFloat(), ((Tensor4D) A.transpose()).getValues());
     }
 }

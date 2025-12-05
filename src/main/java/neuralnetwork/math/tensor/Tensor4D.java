@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class Tensor4D extends Tensor {
-    public final float[][][][] values;
+    private final float[][][][] values;
     public Tensor4D(float[][][][] values) {
         this.values = values;
     }
@@ -33,12 +33,14 @@ public class Tensor4D extends Tensor {
      */
     public Tensor4D applyVectorOperation(Vector vector, FloatBinaryOperator operation) {
         int d1 = values.length, d2 = values[0].length, r = values[0][0].length, c = values[0][0][0].length;
+        if (ENABLE_SHAPE_CHECKS && vector.shape()[0] != c)
+            throw new IllegalArgumentException("Vector length must match last dim: " + vector.shape()[0] + " vs " + c);
         float[][][][] result = new float[d1][d2][r][c];
         for (int i = 0; i < d1; i++) {
             for (int j = 0; j < d2; j++) {
                 for (int x = 0; x < r; x++) {
                     for (int y = 0; y < c; y++) {
-                        result[i][j][x][y] = operation.applyAsFloat(values[i][j][x][y], vector.values[y]);
+                        result[i][j][x][y] = operation.applyAsFloat(values[i][j][x][y], vector.get(y));
                     }
                 }
             }
@@ -51,12 +53,17 @@ public class Tensor4D extends Tensor {
      */
     public Tensor4D applyMatrixOperation(Matrix matrix, FloatBinaryOperator operation) {
         int d1 = values.length, d2 = values[0].length, r = values[0][0].length, c = values[0][0][0].length;
+        if (ENABLE_SHAPE_CHECKS) {
+            float[][] mv = matrix.getValues();
+            if (mv.length != r || mv[0].length != c)
+                throw new IllegalArgumentException("Matrix shape must match last two dims: (" + r + "," + c + ") vs (" + mv.length + "," + mv[0].length + ")");
+        }
         float[][][][] result = new float[d1][d2][r][c];
         for (int i = 0; i < d1; i++) {
             for (int j = 0; j < d2; j++) {
                 for (int x = 0; x < r; x++) {
                     for (int y = 0; y < c; y++) {
-                        result[i][j][x][y] = operation.applyAsFloat(values[i][j][x][y], matrix.values[x][y]);
+                        result[i][j][x][y] = operation.applyAsFloat(values[i][j][x][y], matrix.get(x, y));
                     }
                 }
             }
@@ -69,12 +76,17 @@ public class Tensor4D extends Tensor {
      */
     public Tensor4D applyTensor3DOperation(Tensor3D tensor3D, FloatBinaryOperator operation) {
         int d1 = values.length, d2 = values[0].length, r = values[0][0].length, c = values[0][0][0].length;
+        if (ENABLE_SHAPE_CHECKS) {
+            int[] s = tensor3D.shape();
+            if (s[0] != d2 || s[1] != r || s[2] != c)
+                throw new IllegalArgumentException("Tensor3D shape must match [d2,r,c]");
+        }
         float[][][][] result = new float[d1][d2][r][c];
         for (int i = 0; i < d1; i++) {
             for (int j = 0; j < d2; j++) {
                 for (int x = 0; x < r; x++) {
                     for (int y = 0; y < c; y++) {
-                        result[i][j][x][y] = operation.applyAsFloat(values[i][j][x][y], tensor3D.values[j][x][y]);
+                        result[i][j][x][y] = operation.applyAsFloat(values[i][j][x][y], tensor3D.get(j, x, y));
                     }
                 }
             }
@@ -87,6 +99,11 @@ public class Tensor4D extends Tensor {
      */
     public Tensor4D applyTensor4DOperation(Tensor4D other, FloatBinaryOperator operation) {
         int d1 = values.length, d2 = values[0].length, r = values[0][0].length, c = values[0][0][0].length;
+        if (ENABLE_SHAPE_CHECKS) {
+            int[] s = other.shape();
+            if (s[0] != d1 || s[1] != d2 || s[2] != r || s[3] != c)
+                throw new IllegalArgumentException("Tensor4D element-wise requires same shape");
+        }
         float[][][][] result = new float[d1][d2][r][c];
         for (int i = 0; i < d1; i++) {
             for (int j = 0; j < d2; j++) {
@@ -103,7 +120,7 @@ public class Tensor4D extends Tensor {
     @Override
     public Tensor add(Tensor tensor) {
         if (tensor instanceof Scalar s) {
-            return applyOperation(a -> a + s.value);
+            return applyOperation(a -> a + s.get());
         } else if (tensor instanceof Vector v) {
             return applyVectorOperation(v, (a, b) -> a + b);
         } else if (tensor instanceof Matrix m) {
@@ -120,7 +137,7 @@ public class Tensor4D extends Tensor {
     @Override
     public Tensor subtract(Tensor tensor) {
         if (tensor instanceof Scalar s) {
-            return applyOperation(a -> a - s.value);
+            return applyOperation(a -> a - s.get());
         } else if (tensor instanceof Vector v) {
             return applyVectorOperation(v, (a, b) -> a - b);
         } else if (tensor instanceof Matrix m) {
@@ -135,70 +152,9 @@ public class Tensor4D extends Tensor {
     }
     
     @Override
-    public Tensor mul(Tensor tensor) {
+    public Tensor multiply(Tensor tensor) {
         if (tensor instanceof Scalar s) {
-            return applyOperation(a -> a * s.value);
-        } else if (tensor instanceof Vector v) {
-            // Batched matvec over last two dims; result dims: [d1][d2][r]
-            int d1 = values.length, d2 = values[0].length, r = values[0][0].length, c = values[0][0][0].length;
-            float[][][] result = new float[d1][d2][r];
-            for (int i = 0; i < d1; i++) {
-                for (int j = 0; j < d2; j++) {
-                    for (int x = 0; x < r; x++) {
-                        float sum = 0f;
-                        for (int y = 0; y < c; y++) {
-                            sum += values[i][j][x][y] * v.values[y];
-                        }
-                        result[i][j][x] = sum;
-                    }
-                }
-            }
-            return new Tensor3D(result);
-        } else if (tensor instanceof Matrix m) {
-            // Batched matmul on last two dims; result dims: [d1][d2][r][n]
-            int d1 = values.length, d2 = values[0].length, r = values[0][0].length, c = values[0][0][0].length, n = m.values[0].length;
-            float[][][][] result = new float[d1][d2][r][n];
-            for (int i = 0; i < d1; i++) {
-                for (int j = 0; j < d2; j++) {
-                    for (int x = 0; x < r; x++) {
-                        for (int y = 0; y < n; y++) {
-                            float sum = 0f;
-                            for (int k = 0; k < c; k++) {
-                                sum += values[i][j][x][k] * m.values[k][y];
-                            }
-                            result[i][j][x][y] = sum;
-                        }
-                    }
-                }
-            }
-            return new Tensor4D(result);
-        } else if (tensor instanceof Tensor4D t4) {
-            // Batched matmul per [i][j]: (r x c) @ (c x n)
-            int d1 = values.length, d2 = values[0].length, r = values[0][0].length, c = values[0][0][0].length, n = t4.values[0][0][0].length;
-            float[][][][] result = new float[d1][d2][r][n];
-            for (int i = 0; i < d1; i++) {
-                for (int j = 0; j < d2; j++) {
-                    for (int x = 0; x < r; x++) {
-                        for (int y = 0; y < n; y++) {
-                            float sum = 0f;
-                            for (int k = 0; k < c; k++) {
-                                sum += values[i][j][x][k] * t4.values[i][j][k][y];
-                            }
-                            result[i][j][x][y] = sum;
-                        }
-                    }
-                }
-            }
-            return new Tensor4D(result);
-        } else {
-            return tensor.mul(this);
-        }
-    }
-    
-    @Override
-    public Tensor matmul(Tensor tensor) {
-        if (tensor instanceof Scalar s) {
-            return applyOperation(a -> a * s.value);
+            return applyOperation(a -> a * s.get());
         } else if (tensor instanceof Vector v) {
             return applyVectorOperation(v, (a, b) -> a * b);
         } else if (tensor instanceof Matrix m) {
@@ -213,9 +169,81 @@ public class Tensor4D extends Tensor {
     }
     
     @Override
+    public Tensor matmul(Tensor tensor) {
+        if (tensor instanceof Vector v) {
+            // Batched matvec over last two dims; result dims: [d1][d2][r]
+            int d1 = values.length, d2 = values[0].length, r = values[0][0].length, c = values[0][0][0].length;
+            if (ENABLE_SHAPE_CHECKS && v.shape()[0] != c)
+                throw new IllegalArgumentException("Tensor4D@Vector mismatch: last dim=" + c + " vs vector=" + v.shape()[0]);
+            float[][][] result = new float[d1][d2][r];
+            for (int i = 0; i < d1; i++) {
+                for (int j = 0; j < d2; j++) {
+                    for (int x = 0; x < r; x++) {
+                        float sum = 0f;
+                        for (int y = 0; y < c; y++) {
+                            sum += values[i][j][x][y] * v.get(y);
+                        }
+                        result[i][j][x] = sum;
+                    }
+                }
+            }
+            return new Tensor3D(result);
+        } else if (tensor instanceof Matrix m) {
+            // Batched matmul on last two dims; result dims: [d1][d2][r][n]
+            int d1 = values.length, d2 = values[0].length, r = values[0][0].length, c = values[0][0][0].length; 
+            float[][] mv = m.getValues();
+            if (ENABLE_SHAPE_CHECKS && c != mv.length)
+                throw new IllegalArgumentException("Tensor4D@Matrix mismatch: inner dim=" + c + " vs m.rows=" + mv.length);
+            int n = mv[0].length;
+            float[][][][] result = new float[d1][d2][r][n];
+            for (int i = 0; i < d1; i++) {
+                for (int j = 0; j < d2; j++) {
+                    for (int x = 0; x < r; x++) {
+                        for (int y = 0; y < n; y++) {
+                            float sum = 0f;
+                            for (int k = 0; k < c; k++) {
+                                sum += values[i][j][x][k] * mv[k][y];
+                            }
+                            result[i][j][x][y] = sum;
+                        }
+                    }
+                }
+            }
+            return new Tensor4D(result);
+        } else if (tensor instanceof Tensor4D t4) {
+            // Batched matmul per [i][j]: (r x c) @ (c x n)
+            int d1 = values.length, d2 = values[0].length, r = values[0][0].length, c = values[0][0][0].length; 
+            int n = t4.shape()[3];
+            if (ENABLE_SHAPE_CHECKS) {
+                int[] s = t4.shape();
+                if (s[0] != d1 || s[1] != d2 || s[2] != c)
+                    throw new IllegalArgumentException("Tensor4D@Tensor4D mismatch over last dims");
+            }
+            float[][][][] result = new float[d1][d2][r][n];
+            for (int i = 0; i < d1; i++) {
+                for (int j = 0; j < d2; j++) {
+                    for (int x = 0; x < r; x++) {
+                        for (int y = 0; y < n; y++) {
+                            float sum = 0f;
+                            for (int k = 0; k < c; k++) {
+                                sum += values[i][j][x][k] * t4.get(i, j, k, y);
+                            }
+                            result[i][j][x][y] = sum;
+                        }
+                    }
+                }
+            }
+            return new Tensor4D(result);
+        } else if (tensor instanceof Scalar) {
+            throw new IllegalArgumentException("Tensor4D @ Scalar is not defined in NumPy");
+        }
+        throw new IllegalArgumentException("Unsupported matmul for Tensor4D with " + tensor.type());
+    }
+    
+    @Override
     public Tensor divide(Tensor tensor) {
         if (tensor instanceof Scalar s) {
-            return applyOperation(a -> a / s.value);
+            return applyOperation(a -> a / s.get());
         } else if (tensor instanceof Vector v) {
             return applyVectorOperation(v, (a, b) -> a / b);
         } else if (tensor instanceof Matrix m) {
@@ -261,15 +289,10 @@ public class Tensor4D extends Tensor {
     }
     
     @Override
-    public String toString() {
-        String dimensions = Arrays.stream(this.values)
-            .map(tensor3d -> {
-                String shape = Arrays.stream(tensor3d)
-                    .map(matrix -> "(" + matrix.length + (matrix.length > 0 ? ", " + matrix[0].length : "") + ")")
-                    .collect(Collectors.joining(", "));
-                return "(" + shape + ")";
-            })
-            .collect(Collectors.joining());
-        return type() + "(" + dimensions + ")";
-    }
+    public String toString() { return super.toString(); }
+
+    public float[][][][] getValues() { return values; }
+    public float get(int i, int j, int k, int l) { return values[i][j][k][l]; }
+    @Override
+    public int[] shape() { return new int[] { values.length, values[0].length, values[0][0].length, values[0][0][0].length }; }
 }

@@ -29,14 +29,14 @@ class VectorTest {
         Tensor b = new Scalar(3.5f);
         Tensor c = a.add(b);
         assertInstanceOf(Vector.class, c);
-        assertArrayEquals(new float[] { 4.5f, 5.5f, 6.5f }, ((Vector) c).values);
+        assertArrayEquals(new float[] { 4.5f, 5.5f, 6.5f }, ((Vector) c).getValues());
         
         // Testing for vector
         a = new Vector(new float[] { 1f, 2f, 3f });
         b = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
         c = a.add(b);
         assertInstanceOf(Vector.class, c);
-        assertArrayEquals(new float[] { 3.5f, -0.5f, 5.5f }, ((Vector) c).values);
+        assertArrayEquals(new float[] { 3.5f, -0.5f, 5.5f }, ((Vector) c).getValues());
     }
     
     @Test
@@ -46,14 +46,14 @@ class VectorTest {
         Tensor b = new Scalar(-3.5f);
         Tensor c = a.add(b);
         assertInstanceOf(Vector.class, c);
-        assertArrayEquals(new float[] { -2.5f, -1.5f, -0.5f }, ((Vector) c).values);
+        assertArrayEquals(new float[] { -2.5f, -1.5f, -0.5f }, ((Vector) c).getValues());
         
         // Testing for vector
         a = new Vector(new float[] { 1f, 2f, 3f });
         b = new Vector(new float[] { 2.5f, -2.5f, 2.5f });
         c = a.subtract(b);
         assertInstanceOf(Vector.class, c);
-        assertArrayEquals(new float[] { -1.5f, 4.5f, 0.5f }, ((Vector) c).values);
+        assertArrayEquals(new float[] { -1.5f, 4.5f, 0.5f }, ((Vector) c).getValues());
     }
     
     @Test
@@ -61,16 +61,16 @@ class VectorTest {
         // Testing for scalar
         Vector a = new Vector(new float[] { 1f, 2f, 3f });
         Tensor b = new Scalar(-3.5f);
-        Tensor c = a.mul(b);
+        Tensor c = a.multiply(b);
         assertInstanceOf(Vector.class, c);
-        assertArrayEquals(new float[] { -3.5f, -7f, -10.5f }, ((Vector) c).values);
+        assertArrayEquals(new float[] { -3.5f, -7f, -10.5f }, ((Vector) c).getValues());
         
         // Testing for vector
         a = new Vector(new float[] { 1f, 2f, 3f });
         b = new Vector(new float[] { 2f, -3f, 4f });
-        c = a.mul(b);
+        c = a.multiply(b);
         assertInstanceOf(Vector.class, c);
-        assertArrayEquals(new float[] { 2, -6, 12 }, ((Vector) c).values);
+        assertArrayEquals(new float[] { 2, -6, 12 }, ((Vector) c).getValues());
         
 //        // Testing for Matrix
 //        a = new Vector(new float[] { 2f, 6f });
@@ -87,14 +87,14 @@ class VectorTest {
         Tensor b = new Scalar(-2f);
         Tensor c = a.divide(b);
         assertInstanceOf(Vector.class, c);
-        assertArrayEquals(new float[] { -1f, -3f, 5f }, ((Vector) c).values);
+        assertArrayEquals(new float[] { -1f, -3f, 5f }, ((Vector) c).getValues());
         
         // Testing for vector
         a = new Vector(new float[] { 2f, 6f, -8f });
         b = new Vector(new float[] { 2f, -3f, 4f });
         c = a.divide(b);
         assertInstanceOf(Vector.class, c);
-        assertArrayEquals(new float[] { 1, -2, -2 }, ((Vector) c).values);
+        assertArrayEquals(new float[] { 1, -2, -2 }, ((Vector) c).getValues());
     }
     
     @Test
@@ -111,7 +111,7 @@ class VectorTest {
         Tensor c = a.deepCopy();
         a.add(new Vector(new float[] { 2.5f, 2.5f, 2.5f }));
         
-        assertArrayEquals(a.values, b.values);
+        assertArrayEquals(a.getValues(), b.getValues());
         assertEquals(a, c);
         assertNotEquals(new Vector(new float[] { 1f, 2f, 3f, 4f }), a);
     }
@@ -122,8 +122,8 @@ class VectorTest {
         Vector b = (Vector) a.deepCopy();
         a.add(new Vector(new float[] { 2.5f, 2.5f, 2.5f }));
         
-        assertArrayEquals(a.values, b.values);
-        assertNotSame(a.values, b.values);
+        assertArrayEquals(a.getValues(), b.getValues());
+        assertNotSame(a.getValues(), b.getValues());
     }
     
     private static final String A_PY = "a = np.array([1.0, 2.0, 3.0])";
@@ -138,7 +138,7 @@ class VectorTest {
             .append("c = a + 3.5")
             .execute("c");
         float[] py1 = to1D(r1.parseToFloat());
-        assertFloatArrayEquals(((Vector) a.add(s)).values, py1, 1e-5f);
+        assertFloatArrayEquals(((Vector) a.add(s)).getValues(), py1, 1e-5f);
         
         // subtract
         PythonResult r2 = new PythonBuilder()
@@ -146,7 +146,7 @@ class VectorTest {
             .append("c = a - 3.5")
             .execute("c");
         float[] py2 = to1D(r2.parseToFloat());
-        assertFloatArrayEquals(((Vector) a.subtract(s)).values, py2, 1e-5f);
+        assertFloatArrayEquals(((Vector) a.subtract(s)).getValues(), py2, 1e-5f);
         
         // mul
         PythonResult r3 = new PythonBuilder()
@@ -154,7 +154,7 @@ class VectorTest {
             .append("c = a * -3.5")
             .execute("c");
         float[] py3 = to1D(r3.parseToFloat());
-        assertFloatArrayEquals(((Vector) a.mul(new Scalar(-3.5f))).values, py3, 1e-5f);
+        assertFloatArrayEquals(((Vector) a.multiply(new Scalar(-3.5f))).getValues(), py3, 1e-5f);
         
         // divide
         PythonResult r4 = new PythonBuilder()
@@ -163,7 +163,7 @@ class VectorTest {
             .execute("c");
         float[] py4 = to1D(r4.parseToFloat());
         Vector v = new Vector(new float[] { 2f, 6f, -10f });
-        assertFloatArrayEquals(((Vector) v.divide(new Scalar(-2f))).values, py4, 1e-5f);
+        assertFloatArrayEquals(((Vector) v.divide(new Scalar(-2f))).getValues(), py4, 1e-5f);
     }
     
     @Test
@@ -177,7 +177,7 @@ class VectorTest {
             .append("c = a + b")
             .execute("c");
         float[] py1 = to1D(r1.parseToFloat());
-        assertFloatArrayEquals(((Vector) a.add(b)).values, py1, 1e-5f);
+        assertFloatArrayEquals(((Vector) a.add(b)).getValues(), py1, 1e-5f);
         
         // subtract
         PythonResult r2 = new PythonBuilder()
@@ -186,7 +186,7 @@ class VectorTest {
             .append("c = a - b")
             .execute("c");
         float[] py2 = to1D(r2.parseToFloat());
-        assertFloatArrayEquals(((Vector) a.subtract(b)).values, py2, 1e-5f);
+        assertFloatArrayEquals(((Vector) a.subtract(b)).getValues(), py2, 1e-5f);
         
         // elementwise mul
         PythonResult r3 = new PythonBuilder()
@@ -196,7 +196,7 @@ class VectorTest {
             .execute("c");
         float[] py3 = to1D(r3.parseToFloat());
         Vector b2 = new Vector(new float[] { 2f, -3f, 4f });
-        assertFloatArrayEquals(((Vector) a.mul(b2)).values, py3, 1e-5f);
+        assertFloatArrayEquals(((Vector) a.multiply(b2)).getValues(), py3, 1e-5f);
         
         // divide elementwise
         PythonResult r4 = new PythonBuilder()
@@ -206,6 +206,6 @@ class VectorTest {
             .execute("c");
         float[] py4 = to1D(r4.parseToFloat());
         Vector a2 = new Vector(new float[] { 2f, 6f, -8f });
-        assertFloatArrayEquals(((Vector) a2.divide(b2)).values, py4, 1e-5f);
+        assertFloatArrayEquals(((Vector) a2.divide(b2)).getValues(), py4, 1e-5f);
 }
 }

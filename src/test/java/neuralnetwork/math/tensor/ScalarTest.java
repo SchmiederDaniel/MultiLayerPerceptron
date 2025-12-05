@@ -25,7 +25,7 @@ class ScalarTest {
     void transpose() {
         Scalar a = new Scalar(6f);
         Scalar result = (Scalar) a.transpose();
-        assertEquals(6f, result.value);
+        assertEquals(6f, result.get());
     }
     
     @Test
@@ -34,8 +34,8 @@ class ScalarTest {
         Scalar b = (Scalar) a.deepCopy();
         a.add(new Scalar(2.5f));
         
-        assertEquals(6f, a.value);
-        assertNotSame(a.value, b.value);
+        assertEquals(6f, a.get());
+        assertNotSame(a.get(), b.get());
     }
     
     @Test
@@ -65,19 +65,18 @@ class ScalarTest {
     }
     
     @Test
-    void mul() {
+    void multiply() {
         Scalar a = new Scalar(-3f);
         Scalar c = new Scalar(3f);
         
-        assertEquals(new Scalar(-9f), a.mul(c));
+        assertEquals(new Scalar(-9f), a.multiply(c));
     }
     
     @Test
     void matmul() {
         Scalar a = new Scalar(-3f);
         Scalar c = new Scalar(3f);
-        
-        assertEquals(new Scalar(-9f), a.matmul(c));
+        assertThrows(IllegalArgumentException.class, () -> a.matmul(c));
     }
     
     @Test
@@ -101,7 +100,7 @@ class ScalarTest {
             .append("c = a + b")
             .execute("c");
         float pyAdd = Py.toScalar(plus.parseToFloat());
-        assertFloatEquals(((Scalar) a.add(b)).value, pyAdd);
+        assertFloatEquals(((Scalar) a.add(b)).get(), pyAdd);
         
         // -
         PythonResult minus = new PythonBuilder()
@@ -110,7 +109,7 @@ class ScalarTest {
             .append("c = a - b")
             .execute("c");
         float pySub = Py.toScalar(minus.parseToFloat());
-        assertFloatEquals(((Scalar) a.subtract(b)).value, pySub);
+        assertFloatEquals(((Scalar) a.subtract(b)).get(), pySub);
         
         // * (elementwise for scalars)
         PythonResult times = new PythonBuilder()
@@ -119,16 +118,15 @@ class ScalarTest {
             .append("c = a * b")
             .execute("c");
         float pyMul = Py.toScalar(times.parseToFloat());
-        assertFloatEquals(((Scalar) a.mul(b)).value, pyMul);
+        assertFloatEquals(((Scalar) a.multiply(b)).get(), pyMul);
         
-        // matmul in Java behaves like element-wise for Scalars, still product
+        // matmul for scalars is not defined in NumPy; expect exception in Java
         PythonResult matmul = new PythonBuilder()
             .append("a = np.array(-3.0)")
             .append("b = np.array(3.0)")
-            .append("c = a * b") // numpy scalar @ scalar is not defined; use *
+            .append("c = a * b") // numpy scalar @ scalar is not defined
             .execute("c");
-        float pyMatMul = Py.toScalar(matmul.parseToFloat());
-        assertFloatEquals(((Scalar) a.matmul(b)).value, pyMatMul);
+        assertThrows(IllegalArgumentException.class, () -> a.matmul(b));
         
         // /
         PythonResult div = new PythonBuilder()
@@ -137,6 +135,6 @@ class ScalarTest {
             .append("c = a / b")
             .execute("c");
         float pyDiv = Py.toScalar(div.parseToFloat());
-        assertFloatEquals(((Scalar) a.divide(b)).value, pyDiv);
+        assertFloatEquals(((Scalar) a.divide(b)).get(), pyDiv);
     }
 }

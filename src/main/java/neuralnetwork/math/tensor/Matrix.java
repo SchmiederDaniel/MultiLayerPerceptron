@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class Matrix extends Tensor {
-    public final float[][] values;
+    private final float[][] values;
     
     public Matrix(float[][] values) {
         this.values = values;
@@ -24,16 +24,23 @@ public class Matrix extends Tensor {
     }
     
     public Matrix applyVectorOperation(Vector vector, FloatBinaryOperator operation) {
+        if (ENABLE_SHAPE_CHECKS && values[0].length != vector.shape()[0])
+            throw new IllegalArgumentException("Vector length must match matrix columns for element-wise broadcast: cols=" + values[0].length + " vs " + vector.shape()[0]);
         float[][] result = new float[this.values.length][this.values[0].length];
         for (int i = 0; i < values.length; i++) {
             for (int j = 0; j < values[0].length; j++) {
-                result[i][j] = operation.applyAsFloat(this.values[i][j], vector.values[j]);
+                result[i][j] = operation.applyAsFloat(this.values[i][j], vector.get(j));
             }
         }
         return new Matrix(result);
     }
     
     public Matrix applyMatrixOperation(Matrix matrix, FloatBinaryOperator operation) {
+        if (ENABLE_SHAPE_CHECKS) {
+            int r = values.length, c = values[0].length;
+            if (matrix.values.length != r || matrix.values[0].length != c)
+                throw new IllegalArgumentException("Matrix element-wise requires same shape: (" + r + "," + c + ") vs (" + matrix.values.length + "," + matrix.values[0].length + ")");
+        }
         float[][] result = new float[this.values.length][this.values[0].length];
         for (int i = 0; i < values.length; i++) {
             for (int j = 0; j < values[0].length; j++) {
@@ -46,7 +53,7 @@ public class Matrix extends Tensor {
     @Override
     public Tensor add(Tensor tensor) {
         if (tensor instanceof Scalar) {
-            return applyOperation(a -> a + ((Scalar) tensor).value);
+            return applyOperation(a -> a + ((Scalar) tensor).get());
         } else if (tensor instanceof Vector) {
             return applyVectorOperation((Vector) tensor, (a, b) -> a + b);
         } else if (tensor instanceof Matrix) {
@@ -59,7 +66,7 @@ public class Matrix extends Tensor {
     @Override
     public Tensor subtract(Tensor tensor) {
         if (tensor instanceof Scalar) {
-            return applyOperation(a -> a - ((Scalar) tensor).value);
+            return applyOperation(a -> a - ((Scalar) tensor).get());
         } else if (tensor instanceof Vector) {
             return applyVectorOperation((Vector) tensor, (a, b) -> a - b);
         } else if (tensor instanceof Matrix) {
@@ -70,16 +77,16 @@ public class Matrix extends Tensor {
     }
     
     @Override
-    public Tensor mul(Tensor tensor) {
+    public Tensor multiply(Tensor tensor) {
         if (tensor instanceof Scalar) {
-            return applyOperation(a -> a * ((Scalar) tensor).value);
+            return applyOperation(a -> a * ((Scalar) tensor).get());
         } else if (tensor instanceof Vector) {
-            return multiplyVector((Vector) tensor);
+            // Element-wise with broadcast along columns
+            return applyVectorOperation((Vector) tensor, (a, b) -> a * b);
         } else if (tensor instanceof Matrix) {
-            // Matrix-matrix multiplication
-            return multiplyMatrix((Matrix) tensor);
+            return applyMatrixOperation((Matrix) tensor, (a, b) -> a * b);
         } else {
-            return tensor.mul(this);
+            return tensor.multiply(this);
         }
     }
     
@@ -98,8 +105,10 @@ public class Matrix extends Tensor {
      * @return
      */
     @NotNull
-    private Matrix multiplyMatrix(Matrix tensor) {
+    private Matrix mm(Matrix tensor) {
         Matrix matrix = tensor;
+        if (ENABLE_SHAPE_CHECKS && this.values[0].length != matrix.values.length)
+            throw new IllegalArgumentException("Matmul dimension mismatch: (" + this.values.length + "," + this.values[0].length + ") @ (" + matrix.values.length + "," + matrix.values[0].length + ")");
         float[][] result = new float[this.values.length][matrix.values[0].length];
         for (int i = 0; i < this.values.length; i++) {
             for (int j = 0; j < matrix.values[0].length; j++) {
@@ -128,14 +137,16 @@ public class Matrix extends Tensor {
      * @return
      */
     @NotNull
-    private Vector multiplyVector(Vector tensor) {
+    private Vector mv(Vector tensor) {
         // Matrix-vector multiplication
         Vector vector = tensor;
+        if (ENABLE_SHAPE_CHECKS && values[0].length != vector.shape()[0])
+            throw new IllegalArgumentException("Matmul Matrix@Vector mismatch: cols=" + values[0].length + " vs vector length=" + vector.shape()[0]);
         float[] result = new float[this.values.length];
         for (int i = 0; i < values.length; i++) {
             float sum = 0;
             for (int j = 0; j < values[0].length; j++) {
-                sum += this.values[i][j] * vector.values[j];
+                sum += this.values[i][j] * vector.get(j);
             }
             result[i] = sum;
         }
@@ -149,19 +160,20 @@ public class Matrix extends Tensor {
     
     @Override
     public Tensor matmul(Tensor tensor) {
-        if (tensor instanceof Scalar) {
-            return applyOperation(a -> a * ((Scalar) tensor).value);
+        if (tensor instanceof Vector) {
+            return mv((Vector) tensor);
         } else if (tensor instanceof Matrix) {
-            return applyMatrixOperation((Matrix) tensor, (a, b) -> a * b);
-        } else {
-            throw new IllegalArgumentException("Hadamard product not supported for Matrix and " + tensor.type());
+            return mm((Matrix) tensor);
+        } else if (tensor instanceof Scalar) {
+            throw new IllegalArgumentException("Matrix @ Scalar is not defined in NumPy");
         }
+        throw new IllegalArgumentException("Unsupported matmul for Matrix with " + tensor.type());
     }
     
     @Override
     public Tensor divide(Tensor tensor) {
         if (tensor instanceof Scalar) {
-            return applyOperation(a -> a / ((Scalar) tensor).value);
+            return applyOperation(a -> a / ((Scalar) tensor).get());
         } else if (tensor instanceof Vector) {
             return applyVectorOperation((Vector) tensor, (a, b) -> a / b);
         } else if (tensor instanceof Matrix) {
@@ -194,12 +206,7 @@ public class Matrix extends Tensor {
     }
     
     @Override
-    public String toString() {
-        String dimensions = Arrays.stream(this.values)
-            .map(e -> String.valueOf(e.length))
-            .collect(Collectors.joining(", "));
-        return type() + "(" + dimensions + ")";
-    }
+    public String toString() { return super.toString(); }
     
     @Override
     public boolean equals(Object obj) {
@@ -208,4 +215,9 @@ public class Matrix extends Tensor {
         }
         return false;
     }
+
+    public float[][] getValues() { return values; }
+    public float get(int i, int j) { return values[i][j]; }
+    @Override
+    public int[] shape() { return new int[] { values.length, values[0].length }; }
 }
