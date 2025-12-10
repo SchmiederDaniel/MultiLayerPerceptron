@@ -1,10 +1,10 @@
 package neuralnetwork.benchmark;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.lossfunction.BinaryCrossEntropy;
-import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.math.NumpyArray;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.lossfunction.BinaryCrossEntropy;
+import oldneuralnetwork.lossfunction.LossFunction;
+import oldneuralnetwork.NumpyArray;
 
 import javax.swing.*;
 import java.awt.*;

@@ -1,150 +1,89 @@
 package neuralnetwork;
 
-import neuralnetwork.layer.Dense;
-import neuralnetwork.layer.Layer;
 import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.math.NumpyArray;
+import neuralnetwork.math.Tensor;
+import neuralnetwork.layer.Layer;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class NeuralNetwork {
-  //  List<Layer> layerList;
-  public Layer[] layerArray;
-  
-  public NeuralNetwork(Layer[] layerArray) {
-    this.layerArray = layerArray;
-  }
-  
-  /*
-  Should only be used for training and can cause problems when used asynchron
-   */
-  @Deprecated
-  public NumpyArray predict(float... input) {
-    return predict(NumpyArray.of(input));
-  }
-  
-  public NumpyArray predict(NumpyArray input) {
-    NumpyArray output = input;
-    for (Layer layer : layerArray) {
-      output = layer.forward(output);
-    }
-    return output;
-  }
-  
-  public NumpyArray predictThreadSafe(float... input) {
-    return predictThreadSafe(NumpyArray.of(input));
-  }
-  
-  public NumpyArray predictThreadSafe(NumpyArray input) {
-    NumpyArray output = input;
-    for (Layer layer : layerArray) {
-      layer = layer.deepCopy();
-      layer.isTraining = false;
-      output = layer.forward(output);
-    }
-    return output;
-  }
-  
-  public NumpyArray backwardWithoutTrain(LossFunction lossFunction, NumpyArray output, NumpyArray y, float learning_rate) {
-    NumpyArray grad = lossFunction.loss_prime(y, output);
-    for (int j = layerArray.length - 1; j >= 0; j--) {
-      Layer layer = layerArray[j].deepCopy();
-      grad = layer.backward(grad, learning_rate);
-    }
-    return grad;
-  }
-  
-  public float trainSingle(LossFunction lossFunction, float[] x_train, float[] y_train, float learning_rate) {
-    return trainSingle(lossFunction, x_train, y_train, learning_rate, false);
-  }
-  
-  // Own train function
-  public void trainSingle(Layer startLayer, LossFunction lossFunction, float[] x_train, float[] y_train, float learning_rate) {
-    float error = 0;
-    NumpyArray x = NumpyArray.of(x_train);
-    NumpyArray y = NumpyArray.of(y_train);
+/**
+ * A simple feed-forward neural network that uses the new math.tensor API (Vector/Matrix/Tensor).
+ */
+public class NeuralNetwork implements Cloneable {
+    public Layer[] layers;
     
-    NumpyArray forward = startLayer.forward(x);
-    //forward
-    NumpyArray output = predict(forward);
-    
-    //backward
-    NumpyArray grad = lossFunction.loss_prime(y, output);
-    for (int j = layerArray.length - 1; j >= 0; j--) {
-      Layer layer = layerArray[j];
-      grad = layer.backward(grad, learning_rate);
-    }
-    startLayer.backward(grad, learning_rate);
-  }
-  
-  // Own train function
-  public float trainSingle(LossFunction lossFunction, float[] x_train, float[] y_train, float learning_rate, boolean verbose) {
-    NumpyArray x = NumpyArray.of(x_train);
-    NumpyArray y = NumpyArray.of(y_train);
-    
-    //forward
-    NumpyArray output = predict(x);
-    
-    //error
-//    if (verbose)
-    float error = lossFunction.loss(y, output);
-    
-    //backward
-    NumpyArray grad = lossFunction.loss_prime(y, output);
-    
-    for (int j = layerArray.length - 1; j >= 0; j--) {
-      Layer layer = layerArray[j];
-      grad = layer.backward(grad, learning_rate);
+    public NeuralNetwork(Layer... layers) {
+        this.layers = layers;
     }
     
-    if (verbose)
-      System.out.println("error=" + error);
-    return error;
-  }
-  
-  public NumpyArray backpropagaton(LossFunction lossFunction, NumpyArray output, NumpyArray y, float learning_rate) {
-    NumpyArray grad = lossFunction.loss_prime(y, output);
-    for (int j = layerArray.length - 1; j >= 0; j--) {
-      Layer layer = layerArray[j];
-      grad = layer.backward(grad, learning_rate);
+    public Tensor predict(Tensor input) {
+        Tensor out = input;
+        for (Layer layer : layers) {
+            out = layer.forward(out);
+        }
+        return out;
     }
-    return grad;
-  }
-  
-  public NumpyArray continueBackpropagation(NumpyArray grad, float learning_rate) {
-    for (int j = layerArray.length - 1; j >= 0; j--) {
-      Layer layer = layerArray[j];
-      grad = layer.backward(grad, learning_rate);
+    
+    /**
+     * Thread-safe prediction: uses a deep-cloned network instance so concurrent
+     * training cannot mutate the parameters used for this inference call.
+     */
+    public Tensor predictThreadSafe(Tensor input) {
+        NeuralNetwork copy = this.clone();
+        // Ensure inference mode
+        for (Layer l : copy.layers) l.isTraining = false;
+        return copy.predict(input);
     }
-    return grad;
-  }
-  
-  public NumpyArray backpropagaton(LossFunction lossFunction, NumpyArray output, float[] y_train, float learning_rate) {
-    NumpyArray y = NumpyArray.of(y_train);
-    return backpropagaton(lossFunction, output, y, learning_rate);
-  }
-  
-  public NeuralNetwork copyMerge(NeuralNetwork neuralNetwork) {
-    throw new RuntimeException("not implemented yet L");
-  }
-  
-  public NeuralNetwork copyMutate(float from, float to) {
-    throw new RuntimeException("not implemented yet L");
-  }
-  
-  public NeuralNetwork copy() {
-    throw new RuntimeException("not implemented yet L");
-  }
-  
-  public NumpyArray[] getWeights() {
-    List<NumpyArray> output = new ArrayList<>();
-    for (Layer layer : layerArray) {
-      if (layer instanceof Dense) {
-        Dense dense = (Dense) layer;
-        output.add(dense.weights);
-      }
+    
+    /**
+     * Convenience overload to accept raw float arrays for 1D inputs.
+     */
+    public Tensor predictThreadSafe(float... input) {
+        return predictThreadSafe(Tensor.of(input));
     }
-    return output.toArray(NumpyArray[]::new);
-  }
+    
+    /**
+     * Backpropagate a gradient through the network without updating external loss.
+     */
+    public Tensor backpropagate(Tensor grad, float learningRate) {
+        Tensor g = grad;
+        for (int i = layers.length - 1; i >= 0; i--) {
+            g = layers[i].backward(g, learningRate);
+        }
+        return g;
+    }
+    
+    /**
+     * Train one sample and return the scalar loss value.
+     */
+    public float trainSingle(LossFunction lossFunction, Tensor x, Tensor y, float learningRate) {
+        Tensor output = predict(x);
+        float loss = lossFunction.loss(y, output);
+        Tensor grad = lossFunction.lossPrime(y, output);
+        backpropagate(grad, learningRate);
+        return loss;
+    }
+    
+    /**
+     * Train one sample and return the scalar loss value.
+     */
+    public Tensor trainSingleGrad(LossFunction lossFunction, Tensor x, Tensor y, float learningRate) {
+        Tensor output = predict(x);
+        Tensor grad = lossFunction.lossPrime(y, output);
+        return backpropagate(grad, learningRate);
+    }
+    
+    @Override
+    public NeuralNetwork clone() {
+        try {
+            NeuralNetwork cloned = (NeuralNetwork) super.clone();
+            Layer[] clonedLayers = new Layer[this.layers.length];
+            for (int i = 0; i < this.layers.length; i++) {
+                clonedLayers[i] = this.layers[i].clone();
+            }
+            cloned.layers = clonedLayers;
+            return cloned;
+        } catch (CloneNotSupportedException e) {
+            // Should not happen because we implement Cloneable
+            throw new AssertionError(e);
+        }
+    }
 }

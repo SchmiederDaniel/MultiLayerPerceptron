@@ -1,9 +1,9 @@
 package neuralnetwork.models;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.lossfunction.MeanSquareError;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.lossfunction.LossFunction;
+import oldneuralnetwork.lossfunction.MeanSquareError;
 
 import javax.swing.*;
 import java.awt.*;

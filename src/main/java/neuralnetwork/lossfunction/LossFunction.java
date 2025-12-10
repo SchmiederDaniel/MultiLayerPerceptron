@@ -1,9 +1,8 @@
 package neuralnetwork.lossfunction;
 
-import neuralnetwork.math.NumpyArray;
+import neuralnetwork.math.Tensor;
 
 public interface LossFunction {
-  public abstract float loss(NumpyArray y_true, NumpyArray y_pred);
-  
-  public abstract NumpyArray loss_prime(NumpyArray y_true, NumpyArray y_pred);
+    float loss(Tensor yTrue, Tensor yPred);
+    Tensor lossPrime(Tensor yTrue, Tensor yPred);
 }

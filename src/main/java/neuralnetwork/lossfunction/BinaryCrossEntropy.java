@@ -1,40 +1,44 @@
 package neuralnetwork.lossfunction;
 
-import neuralnetwork.math.NumpyArray;
+import neuralnetwork.math.Tensor;
 
 public class BinaryCrossEntropy implements LossFunction {
-  
-  @Override
-  public float loss(NumpyArray y_true, NumpyArray y_pred) {
-    if (y_true.rows() != y_pred.rows())
-      throw new IllegalArgumentException("Rows doesn't match " + y_true.rows() + ", " + y_pred.rows());
-    if (y_true.cols() != y_pred.cols())
-      throw new IllegalArgumentException("Cols doesn't match " + y_true.cols() + ", " + y_pred.cols());
-    
-    float sum = 0;
-    for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
-      for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
-        sum += -y_true.data[rowIndex][colIndex] * Math.log(y_pred.data[rowIndex][colIndex])
-            - (1 - y_true.data[rowIndex][colIndex]) * Math.log(1 - y_pred.data[rowIndex][colIndex]);
-      }
+
+    private static final float EPS = 1e-7f;
+
+    @Override
+    public float loss(Tensor yTrue, Tensor yPred) {
+        // clip yPred into (EPS, 1-EPS)
+        Tensor clippedYP = yPred.applyOperation(v ->
+            Math.max(EPS, Math.min(1f - EPS, v))
+        );
+
+        Tensor term1 = yTrue.multiply(clippedYP.applyOperation((float v) -> (float) Math.log(v)));
+        Tensor term2 = (yTrue.copyFill(1f).subtract(yTrue))
+                .multiply(clippedYP.applyOperation((float v) -> (float) Math.log(1f - v)));
+
+        Tensor sum = term1.add(term2);
+        float total = sum.sum();             // total negative log-likelihood (but still negative)
+        long n = yTrue.size();
+
+        return -total / n;                   // mean BCE (positive)
     }
-    return sum / (y_true.rows() * y_pred.cols());
-  }
-  
-  @Override
-  public NumpyArray loss_prime(NumpyArray y_true, NumpyArray y_pred) {
-    if (y_true.rows() != y_pred.rows())
-      throw new IllegalArgumentException("Rows doesn't match " + y_true.rows() + ", " + y_pred.rows());
-    if (y_true.cols() != y_pred.cols())
-      throw new IllegalArgumentException("Cols doesn't match " + y_true.cols() + ", " + y_pred.cols());
-    
-    float[][] newData = new float[y_true.rows()][y_pred.cols()];
-    for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
-      for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
-        newData[rowIndex][colIndex] = ((1f - y_true.data[rowIndex][colIndex]) / (1f - y_pred.data[rowIndex][colIndex])
-            - y_true.data[rowIndex][colIndex] / y_pred.data[rowIndex][colIndex]) / (y_true.rows() * y_true.cols());
-      }
+
+    @Override
+    public Tensor lossPrime(Tensor yTrue, Tensor yPred) {
+        // clip yPred to avoid division by zero
+        Tensor clipped = yPred.applyOperation(v ->
+            Math.max(EPS, Math.min(1f - EPS, v))
+        );
+
+        long n = yTrue.size();
+        float invN = 1f / n;
+
+        // derivative:
+        // dL/dyPred = (yPred - yTrue) / (yPred*(1-yPred)) * (1/N)
+        Tensor numerator = clipped.subtract(yTrue);
+        Tensor denominator = clipped.multiply(clipped.copyFill(1f).subtract(clipped));  // yPred * (1-yPred)
+
+        return numerator.divide(denominator).applyOperation(v -> v * invN);
     }
-    return new NumpyArray(newData);
-  }
 }

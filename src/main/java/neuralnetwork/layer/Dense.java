@@ -1,63 +1,105 @@
 package neuralnetwork.layer;
 
-import neuralnetwork.initialization.Distribution;
-import neuralnetwork.math.NumpyArray;
+import neuralnetwork.init.Distribution;
+import neuralnetwork.math.*;
+import neuralnetwork.optimizer.Adam;
+import neuralnetwork.optimizer.Optimizer;
+import neuralnetwork.optimizer.OptimizerType;
+import neuralnetwork.optimizer.SGD;
 
 public class Dense extends Layer {
-  public NumpyArray weights;
-  public NumpyArray bias;
-  
-  public Dense(int input_size, int output_size, Distribution distribution) {
-    weights = new NumpyArray(output_size, input_size);
-    bias = new NumpyArray(output_size, 1);
+    private final OptimizerType optimizerType;
+    public Matrix W;
+    public Vector b;
     
-    distribution.setInputSize(input_size);
-    distribution.setOutputSize(output_size);
+    private Vector lastInput;
     
-    weights = weights.forAll(distribution::randomWeight);
-    bias = bias.forAll(distribution::randomBias);
-  }
-  
-  public Dense(NumpyArray weights, NumpyArray bias, NumpyArray inputCopy) {
-    this.weights = weights;
-    this.bias = bias;
+    // optimizer (may be null until set)
+    private final Optimizer optimizer;
     
-    this.input = inputCopy;
-  }
-  
-  public Dense(NumpyArray weights, NumpyArray bias) {
-    this.weights = weights;
-    this.bias = bias;
-  }
-  
-  NumpyArray input;
-  
-  @Override
-  public NumpyArray forward(NumpyArray input) {
-    this.input = input;
-    return weights.dot(input).add(bias);
-  }
-  
-  @Override
-  public NumpyArray backward(NumpyArray output_gradient, float learning_rate) {
-    // TODO: dimension output_gradient = (1, 1)
-    NumpyArray weights_gradient = output_gradient.dot(input.transpose());
-    NumpyArray input_gradient = weights.transpose().dot(output_gradient);
-    weights = weights.subtract(weights_gradient.multiply(learning_rate));
-    bias = bias.subtract(output_gradient.multiply(learning_rate)); // idk if activation is a vector or matrix
-    return input_gradient;
-  }
-  
-  @Override
-  public Layer deepCopy() {
-    if (input == null)
-      return new Dense(weights.copy(), bias.copy(), null);
-    else
-      return new Dense(weights.copy(), bias.copy(), input.copy());
-  }
-  
-  @Override
-  public String toString() {
-    return "Dense " + weights.dimension() + " " + bias.dimension();
-  }
+    public Dense(int inSize, int outSize, Distribution distribution, OptimizerType optimizerType) {
+        this(initRandom(inSize, outSize, distribution), new Vector(new float[outSize]), optimizerType);
+    }
+    
+    public Dense(Matrix W, Vector b, OptimizerType optimizerType) {
+        this.W = W;
+        this.b = b;
+        this.optimizer = createOptimizer(optimizerType);
+        this.optimizerType = optimizerType;
+    }
+    
+    private Optimizer createOptimizer(OptimizerType optimizerType) {
+        if (optimizerType == OptimizerType.SGD)
+            return new SGD(this);
+        else if (optimizerType == OptimizerType.Adam)
+            return new Adam(this);
+        return new SGD(this);
+    }
+    
+    private static Matrix initRandom(int inSize, int outSize, Distribution distribution) {
+        distribution.setInputSize(inSize);
+        distribution.setOutputSize(outSize);
+        float[][] w = new float[outSize][inSize];
+        for (int i = 0; i < outSize; i++) {
+            for (int j = 0; j < inSize; j++) {
+                w[i][j] = distribution.randomWeight();
+            }
+        }
+        return new Matrix(w);
+    }
+    
+    @Override
+    public Dense clone() {
+        Matrix Wcopy = (Matrix) this.W.deepCopy();
+        Vector bcopy = (Vector) this.b.deepCopy();
+        Dense cloned = new Dense(Wcopy, bcopy, optimizerType);
+        cloned.isTraining = this.isTraining;
+        // do not carry lastInput/lastOutput
+        // Do not automatically copy/attach optimizer: caller can attach a new optimizer if needed
+        return cloned;
+    }
+    
+    @Override
+    public Tensor forward(Tensor input) {
+        Vector x = (Vector) input;
+        this.lastInput = (Vector) x.deepCopy();
+        Vector y = (Vector) W.matmul(x);
+        y = (Vector) y.add(b);
+        return y;
+    }
+    
+    @Override
+    public Tensor backward(Tensor outputGradient, float learningRate) {
+        Vector gradOut = (Vector) outputGradient; // dL/dy
+        
+        // dL/dW = (dL/dy) outer x   -> build dW  (out, in)
+        float[] g = gradOut.getValues();
+        float[] x = lastInput.getValues();
+        float[][] dW = new float[W.shape()[0]][W.shape()[1]]; // (out, in)
+        for (int i = 0; i < dW.length; i++) {
+            float gi = g[i];
+            for (int j = 0; j < dW[0].length; j++) {
+                dW[i][j] = gi * x[j];
+            }
+        }
+        
+        // dL/db = dL/dy (vector)
+        float[] db = g;
+        
+        // delegate parameter update to optimizer
+        if (this.optimizer == null) {
+            // if no optimizer set, fall back to plain SGD inline update (safe default)
+            Tensor dWT = Tensor.of(dW);
+            Tensor dbT = Tensor.of(db);
+            Tensor lrT = Tensor.of(learningRate);
+            
+            this.W = (Matrix) this.W.subtract(dWT.multiply(lrT));
+            this.b = (Vector) this.b.subtract(dbT.multiply(lrT));
+        } else {
+            this.optimizer.step(dW, db, learningRate);
+        }
+        
+        // dL/dx = W^T @ (dL/dy)
+        return W.transpose().matmul(gradOut);
+    }
 }

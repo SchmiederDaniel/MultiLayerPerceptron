@@ -1,42 +1,42 @@
 package neuralnetwork.lossfunction;
 
-import neuralnetwork.math.NumpyArray;
+import neuralnetwork.math.Tensor;
+
+import java.util.Arrays;
 
 public class MeanSquareError implements LossFunction {
-  // Mean square error loss function
-  @Override
-  public float loss(NumpyArray y_true, NumpyArray y_pred) {
-    if (y_true.rows() != y_pred.rows())
-      throw new IllegalArgumentException("Rows doesn't match " + y_true.rows() + ", " + y_pred.rows());
-    if (y_true.cols() != y_pred.cols())
-      throw new IllegalArgumentException("Cols doesn't match " + y_true.cols() + ", " + y_pred.cols());
-    
-    float sum = 0;
-    for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
-      for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
-        sum += Math.pow(y_true.data[rowIndex][colIndex] - y_pred.data[rowIndex][colIndex], 2);
-      }
+    @Override
+    public float loss(Tensor yTrue, Tensor yPred) {
+        // Validate sizes (optionally) and work with flattened arrays to support any rank.
+        if (Tensor.ENABLE_SHAPE_CHECKS && yTrue.size() != yPred.size()) {
+            throw new IllegalArgumentException(
+                    "MSE: size mismatch " + Arrays.toString(yTrue.shape()) + " vs " + Arrays.toString(yPred.shape()));
+        }
+        float[] yt = yTrue.toFlatArray();
+        float[] yp = yPred.toFlatArray();
+        if (yt.length != yp.length) {
+            throw new IllegalArgumentException("MSE: length mismatch " + yt.length + " vs " + yp.length);
+        }
+        float sum = 0f;
+        for (int i = 0; i < yt.length; i++) {
+            float d = yp[i] - yt[i];
+            sum += d * d;
+        }
+        return (yt.length == 0) ? 0f : sum / yt.length;
     }
-    return sum / (y_true.rows() * y_pred.cols());
-  
-//    return 2 * (y_pred - y_true) / np.size(y_true)
-  }
-  
-  @Override
-  public NumpyArray loss_prime(NumpyArray y_true, NumpyArray y_pred) {
-    if (y_true.rows() != y_pred.rows())
-      throw new IllegalArgumentException("Rows doesn't match " + y_true.rows() + ", " + y_pred.rows());
-    if (y_true.cols() != y_pred.cols())
-      throw new IllegalArgumentException("Cols doesn't match " + y_true.cols() + ", " + y_pred.cols());
-  
-    float[][] newData = new float[y_true.rows()][y_pred.cols()];
-    
-    for (int rowIndex = 0; rowIndex < y_true.rows(); rowIndex++) {
-      for (int colIndex = 0; colIndex < y_true.cols(); colIndex++) {
-        newData[rowIndex][colIndex] = 2f * (y_pred.data[rowIndex][colIndex] - y_true.data[rowIndex][colIndex]) / (y_true.rows() * y_true.cols());
-      }
+
+    @Override
+    public Tensor lossPrime(Tensor yTrue, Tensor yPred) {
+        // Gradient w.r.t. yPred: 2*(yPred - yTrue)/N, preserving the original shape via tensor ops.
+        if (Tensor.ENABLE_SHAPE_CHECKS && yTrue.size() != yPred.size()) {
+            throw new IllegalArgumentException(
+                    "MSE grad: size mismatch " + Arrays.toString(yTrue.shape()) + " vs " + Arrays.toString(yPred.shape()));
+        }
+        float n = (float) yPred.size();
+        if (n == 0f) {
+            // Return a zero-like tensor with the same shape
+            return yPred.copyFill(0f);
+        }
+        return yPred.subtract(yTrue).multiply(Tensor.of(2f / n));
     }
-    return new NumpyArray(newData);
-//    return 2 * (y_pred - y_true) / np.size(y_true)
-  }
 }

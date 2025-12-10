@@ -1,12 +1,12 @@
 package neuralnetwork.models;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.lossfunction.BinaryCrossEntropy;
-import neuralnetwork.lossfunction.AbsoluteLoss;
-import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.math.NumpyArray;
-import neuralnetwork.util.MnistLoader;
+import models.dataset.MNISTLoader;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.lossfunction.BinaryCrossEntropy;
+import oldneuralnetwork.lossfunction.AbsoluteLoss;
+import oldneuralnetwork.lossfunction.LossFunction;
+import oldneuralnetwork.NumpyArray;
 
 import javax.swing.*;
 import java.awt.*;
@@ -76,11 +76,11 @@ public class GAN2 extends JFrame {
     float learningRate = 0.01f;
     
     public Scene() {
-      images = MnistLoader.readImages().stream().toArray(int[][]::new);
+      images = MNISTLoader.readTrainImagesSafe().stream().toArray(int[][]::new);
       if (imageResolution != 28)
         for (int i = 0; i < images.length; i++)
           images[i] = downScale(images[i], imageResolution);
-      labels = MnistLoader.readLabels().stream().mapToInt(i -> i).toArray();
+      labels = MNISTLoader.readTrainLabelsSafe().stream().mapToInt(i -> i).toArray();
       
       generator = new NetworkBuilder()
         .layer.dense(noiseCount + 10, 256)

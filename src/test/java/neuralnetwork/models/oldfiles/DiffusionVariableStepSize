@@ -1,9 +1,9 @@
 package de.darkandblue.neuralnetwork.models;
 
-import de.darkandblue.neuralnetwork.NetworkBuilder;
-import de.darkandblue.neuralnetwork.NeuralNetwork;
-import de.darkandblue.neuralnetwork.lossfunction.*;
-import de.darkandblue.neuralnetwork.math.NumpyArray;
+import de.darkandblue.oldneuralnetwork.NetworkBuilder;
+import de.darkandblue.oldneuralnetwork.NeuralNetwork;
+import de.darkandblue.oldneuralnetwork.lossfunction.*;
+import de.darkandblue.neuralnetwork.oldneuralnetwork.NumpyArray;
 import util.neuralnetwork.MnistLoader;
 
 import javax.swing.*;

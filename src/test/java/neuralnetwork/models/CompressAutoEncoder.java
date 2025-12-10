@@ -1,11 +1,11 @@
 package neuralnetwork.models;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.lossfunction.AbsoluteLoss;
-import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.math.NumpyArray;
-import neuralnetwork.util.MnistLoader;
+import models.dataset.MNISTLoader;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.lossfunction.AbsoluteLoss;
+import oldneuralnetwork.lossfunction.LossFunction;
+import oldneuralnetwork.NumpyArray;
 
 import javax.swing.*;
 import java.awt.*;
@@ -83,8 +83,9 @@ public class CompressAutoEncoder extends JFrame {
     // a algorithm would be usefull which compares the generated image and how it deviates from pixels near by from the original
     
     public Scene() {
-      imageList = MnistLoader.readImages();
-      labelList = MnistLoader.readLabels();
+      imageList = MNISTLoader.readTrainImagesSafe();
+      System.out.println(imageList.size());
+      labelList = MNISTLoader.readTrainLabelsSafe();
       
       startAsyncThreads();
     }
@@ -146,12 +147,12 @@ public class CompressAutoEncoder extends JFrame {
       NumpyArray encoderOutput = neuralNetworkEncoder.predict(NumpyArray.of(x));
       NumpyArray decoderOutput = neuralNetworkDecoder.predict(encoderOutput);
   
-      NumpyArray grad = neuralNetworkDecoder.backwardWithoutTrain(decoderLossFunction, decoderOutput, NumpyArray.of(x), learningRate);
+      NumpyArray grad = neuralNetworkDecoder.backpropagaton(decoderLossFunction, decoderOutput, NumpyArray.of(x), learningRate);
   
-      // making gradient ascent on the encoder
-      grad = grad.multiply(-1);
+//       making gradient ascent on the encoder
+//      grad = grad.multiply(-1);
   
-      neuralNetworkEncoder.backwardWithoutTrain(encoderLossFunction, encoderOutput, grad, learningRate * 0.5f);
+      neuralNetworkEncoder.continueBackpropagation(grad, learningRate * 0.5f);
     }
     
     float[] pixelsToFloat(int[] pixels) {

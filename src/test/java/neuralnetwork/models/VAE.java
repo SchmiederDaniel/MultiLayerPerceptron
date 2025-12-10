@@ -1,11 +1,11 @@
 package neuralnetwork.models;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.lossfunction.AbsoluteLoss;
-import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.math.NumpyArray;
-import neuralnetwork.util.MnistLoader;
+import models.dataset.MNISTLoader;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.lossfunction.AbsoluteLoss;
+import oldneuralnetwork.lossfunction.LossFunction;
+import oldneuralnetwork.NumpyArray;
 
 import javax.swing.*;
 import java.awt.*;
@@ -41,8 +41,8 @@ public class VAE extends JFrame {
       .build();
   
   public static void main(String[] args) {
-    imageList = MnistLoader.readImages();
-    labelList = MnistLoader.readLabels();
+    imageList = MNISTLoader.readTrainImagesSafe();
+    labelList = MNISTLoader.readTrainLabelsSafe();
     
     new VAE();
     new TwoDimVisualizer();

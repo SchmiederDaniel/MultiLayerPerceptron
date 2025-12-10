@@ -1,13 +1,13 @@
 package neuralnetwork.models;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.initialization.Distribution;
-import neuralnetwork.initialization.NormalDistribution;
-import neuralnetwork.layer.Layer;
-import neuralnetwork.lossfunction.AbsoluteLoss;
-import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.math.NumpyArray;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.initialization.Distribution;
+import oldneuralnetwork.initialization.NormalDistribution;
+import oldneuralnetwork.layer.Layer;
+import oldneuralnetwork.lossfunction.AbsoluteLoss;
+import oldneuralnetwork.lossfunction.LossFunction;
+import oldneuralnetwork.NumpyArray;
 
 import javax.swing.*;
 import java.awt.*;

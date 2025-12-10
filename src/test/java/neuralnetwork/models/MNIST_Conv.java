@@ -1,10 +1,10 @@
 package neuralnetwork.models;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.lossfunction.MeanSquareError;
-import neuralnetwork.math.NumpyArray;
-import neuralnetwork.util.MnistLoader;
+import models.dataset.MNISTLoader;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.lossfunction.MeanSquareError;
+import oldneuralnetwork.NumpyArray;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,8 +40,8 @@ public class MNIST_Conv extends JFrame {
     List<Integer> labelList;
     
     public Scene() throws IOException {
-      imageList = MnistLoader.readImages();
-      labelList = MnistLoader.readLabels();
+      imageList = MNISTLoader.readTrainImagesSafe();
+      labelList = MNISTLoader.readTrainLabelsSafe();
       
       startAsyncThreads();
     }

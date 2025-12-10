@@ -1,12 +1,12 @@
 package neuralnetwork.models;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.lossfunction.AbsoluteLoss;
-import neuralnetwork.lossfunction.BinaryCrossEntropy;
-import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.math.NumpyArray;
-import neuralnetwork.util.MnistLoader;
+import models.dataset.MNISTLoader;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.lossfunction.AbsoluteLoss;
+import oldneuralnetwork.lossfunction.BinaryCrossEntropy;
+import oldneuralnetwork.lossfunction.LossFunction;
+import oldneuralnetwork.NumpyArray;
 
 import javax.swing.*;
 import java.awt.*;
@@ -85,11 +85,11 @@ public class AutoGan extends JFrame {
     float learningRate = 0.1f;
     
     public Scene() {
-      images = MnistLoader.readImages().stream().toArray(int[][]::new);
+      images = MNISTLoader.readTrainImagesSafe().stream().toArray(int[][]::new);
       if (imageResolution != 28)
         for (int i = 0; i < images.length; i++)
           images[i] = downScale(images[i], imageResolution);
-      labels = MnistLoader.readLabels().stream().mapToInt(i -> i).toArray();
+      labels = MNISTLoader.readTrainLabelsSafe().stream().mapToInt(i -> i).toArray();
       
       encoder = new NetworkBuilder()
           .layer.dense(imageResolution * imageResolution, 60)

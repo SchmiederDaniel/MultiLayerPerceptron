@@ -1,11 +1,11 @@
 package neuralnetwork.models;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.lossfunction.AbsoluteLoss;
-import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.math.NumpyArray;
-import neuralnetwork.util.MnistLoader;
+import models.dataset.MNISTLoader;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.lossfunction.AbsoluteLoss;
+import oldneuralnetwork.lossfunction.LossFunction;
+import oldneuralnetwork.NumpyArray;
 
 import javax.swing.*;
 import java.awt.*;
@@ -74,7 +74,7 @@ public class CompressAutoEncoder2 extends JFrame {
       .layer.dense(80, 80)
       .activation.sigmoid()
       .layer.dense(80, 784)
-      .activation.sigmoid()
+//      .activation.sigmoid()
       .build();
     private final static LossFunction decoderLossFunction = new AbsoluteLoss();
     private final static LossFunction encoderLossFunction = new AbsoluteLoss();
@@ -83,8 +83,8 @@ public class CompressAutoEncoder2 extends JFrame {
     // a algorithm would be usefull which compares the generated image and how it deviates from pixels near by from the original
     
     public Scene() {
-      imageList = MnistLoader.readImages();
-      labelList = MnistLoader.readLabels();
+      imageList = MNISTLoader.readTrainImagesSafe();
+      labelList = MNISTLoader.readTrainLabelsSafe();
       
       startAsyncThreads();
     }

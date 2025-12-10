@@ -1,10 +1,10 @@
 package neuralnetwork.models;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.lossfunction.BinaryCrossEntropy;
-import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.util.MnistLoader;
+import models.dataset.MNISTLoader;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.lossfunction.BinaryCrossEntropy;
+import oldneuralnetwork.lossfunction.LossFunction;
 
 import javax.swing.*;
 import java.awt.*;
@@ -66,8 +66,8 @@ public class UpscaleAutoEncoder extends JFrame {
       .build();
     
     public Scene() throws IOException {
-      imageList = MnistLoader.readImages();
-      labelList = MnistLoader.readLabels();
+      imageList = MNISTLoader.readTrainImagesSafe();
+      labelList = MNISTLoader.readTrainLabelsSafe();
       
       startAsyncThreads();
     }

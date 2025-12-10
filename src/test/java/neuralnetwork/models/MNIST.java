@@ -1,12 +1,12 @@
 package neuralnetwork.models;
 
-import neuralnetwork.NetworkBuilder;
-import neuralnetwork.NeuralNetwork;
-import neuralnetwork.layer.Dense;
-import neuralnetwork.layer.Layer;
-import neuralnetwork.lossfunction.MeanSquareError;
-import neuralnetwork.math.NumpyArray;
-import neuralnetwork.util.MnistLoader;
+import models.dataset.MNISTLoader;
+import oldneuralnetwork.NetworkBuilder;
+import oldneuralnetwork.NeuralNetwork;
+import oldneuralnetwork.layer.Dense;
+import oldneuralnetwork.layer.Layer;
+import oldneuralnetwork.lossfunction.MeanSquareError;
+import oldneuralnetwork.NumpyArray;
 
 import javax.swing.*;
 import java.awt.*;
@@ -45,11 +45,11 @@ public class MNIST extends JFrame {
     List<Integer> testLabelList;
     
     public Scene() {
-      imageList = MnistLoader.readImages();
-      labelList = MnistLoader.readLabels();
+      imageList = MNISTLoader.readTrainImagesSafe();
+      labelList = MNISTLoader.readTrainLabelsSafe();
       
-      testImageList = MnistLoader.readTestImages();
-      testLabelList = MnistLoader.readTestLabels();
+      testImageList = MNISTLoader.readTestImagesSafe();
+      testLabelList = MNISTLoader.readTestLabelsSafe();
       
       displayImagePixels = testImageList.get(paintIndex);
       
