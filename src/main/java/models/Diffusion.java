@@ -97,15 +97,15 @@ public class Diffusion extends JFrame {
         static NeuralNetwork neuralNetwork = new NetworkBuilder()
             .optimizer.adam()
             .distribution.xavier()
-            .layer.dense(imageResolution * imageResolution + STEP_INDEX_COUNT, 140)
-            .activation.leakyReLu()
-            .layer.dense(140, 70)
-            .activation.leakyReLu()
-            .layer.dense(70, 70)
-            .activation.leakyReLu()
-            .layer.dense(70, 140)
-            .activation.leakyReLu()
-            .layer.dense(140, imageResolution * imageResolution)
+            .layer.dense(imageResolution * imageResolution + STEP_INDEX_COUNT, 256)
+            .activation.gelu()
+            .layer.dense(256, 128)
+            .activation.gelu()
+            .layer.dense(128,  128)
+            .activation.gelu()
+            .layer.dense(128, 256)
+            .activation.gelu()
+            .layer.dense(256, imageResolution * imageResolution)
             .activation.sigmoid()
             .build();
         static float thinkStepSize = 1f; // 0.5d = best
@@ -205,9 +205,9 @@ public class Diffusion extends JFrame {
             float[] output = new float[array.length];
             Random random = new Random(seed);
 
-//      strength = Math.min(Math.max(strength, 0), 1);
-//      strength = strength * strength;
-//      strength = (float) Math.sqrt(strength);
+//            strength = Math.min(Math.max(strength, 0), 1);
+//            strength = strength * strength;
+//            strength = (float) Math.sqrt(strength);
             
             for (int i = 0; i < array.length; i++) {
                 float value = array[i];
@@ -290,7 +290,7 @@ public class Diffusion extends JFrame {
             graphics.setColor(Color.white);
             float lossAVG = lastLosses.stream().reduce(0f, Float::sum) / lastLosses.size();
             graphics.drawString("Loss: " + String.format("%.8f", lossAVG), getWidth() - 120, getHeight() - 20);
-            while(lastLosses.size() > 500)
+            while (lastLosses.size() > 500)
                 lastLosses.removeFirst();
         }
         
@@ -328,8 +328,8 @@ public class Diffusion extends JFrame {
                 int x = i % 28;
                 int y = i / 28;
                 
-                x /= 28d / toResolution;
-                y /= 28d / toResolution;
+                x /= (int) (28f / toResolution);
+                y /= (int) (28f / toResolution);
                 int i2 = x + y * toResolution;
                 
                 resized[i2] += pixels[i];

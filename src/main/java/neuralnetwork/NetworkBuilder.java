@@ -1,15 +1,12 @@
 package neuralnetwork;
 
-import neuralnetwork.activation.LeakyReLU;
-import neuralnetwork.activation.Sigmoid;
+import neuralnetwork.activation.*;
 import neuralnetwork.init.CustomDistribution;
 import neuralnetwork.init.Distribution;
 import neuralnetwork.init.NormalDistribution;
 import neuralnetwork.init.Xavier;
-import neuralnetwork.layer.Dense;
-import neuralnetwork.layer.Layer;
+import neuralnetwork.layer.*;
 import neuralnetwork.optimizer.OptimizerType;
-import oldneuralnetwork.layer.activation.LeakyReLu;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,11 +82,12 @@ public class NetworkBuilder {
 //      return networkBuilder;
 //    }
 //    
-//    public NetworkBuilder tanh() {
-//      layerList.add(new Tanh());
-//      return networkBuilder;
-//    }
-//    
+        public NetworkBuilder tanh() {
+            layerList.add(new Tanh());
+            return networkBuilder;
+        }
+        
+        //    
 //    public NetworkBuilder elu() {
 //      layerList.add(new ELU());
 //      return networkBuilder;
@@ -99,6 +97,17 @@ public class NetworkBuilder {
             layerList.add(new LeakyReLU());
             return networkBuilder;
         }
+        
+        public NetworkBuilder gelu() {
+            layerList.add(new GELU());
+            return networkBuilder;
+        }
+        
+        
+        public NetworkBuilder softMax() {
+            layerList.add(new Softmax());
+            return networkBuilder;
+        }
     }
     
     public class Layers {
@@ -106,16 +115,31 @@ public class NetworkBuilder {
             layerList.add(new Dense(input_size, output_size, savedDistribution, optimizerType));
             return networkBuilder;
         }
-
-//    public NetworkBuilder dense(NumpyArray weights, NumpyArray bias) {
+        
+        public NetworkBuilder conv2D(int inputDepth, int numFilters, int kernelSize, int stride, int padding) {
+            layerList.add(new Conv2D(inputDepth, numFilters, kernelSize, stride, padding, savedDistribution, optimizerType));
+            return networkBuilder;
+        }
+        
+        public NetworkBuilder flatten() {
+            layerList.add(new Flatten());
+            return networkBuilder;
+        }
+        
+        public NetworkBuilder reshape(int... shape) {
+            layerList.add(new Reshape(shape));
+            return networkBuilder;
+        }
+        
+        //    public NetworkBuilder dense(NumpyArray weights, NumpyArray bias) {
 //      layerList.add(new Dense(weights, bias));
 //      return networkBuilder;
 //    }
 //    
-//    public NetworkBuilder dropOut(float dropOutRate) {
-//      layerList.add(new Dropout(dropOutRate));
-//      return networkBuilder;
-//    }
+        public NetworkBuilder dropOut(float dropOutRate) {
+            layerList.add(new Dropout(dropOutRate));
+            return networkBuilder;
+        }
 
 //    public NetworkBuilder dropOut(double dropOutRate) {
 //      return dropOut((float) dropOutRate);

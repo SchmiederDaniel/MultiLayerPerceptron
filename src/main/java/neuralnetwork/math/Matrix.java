@@ -51,42 +51,34 @@ public class Matrix extends Tensor {
     
     @Override
     public Tensor add(Tensor tensor) {
-        if (tensor instanceof Scalar) {
-            return applyOperation(a -> a + ((Scalar) tensor).get());
-        } else if (tensor instanceof Vector) {
-            return applyVectorOperation((Vector) tensor, (a, b) -> a + b);
-        } else if (tensor instanceof Matrix) {
-            return applyMatrixOperation((Matrix) tensor, (a, b) -> a + b);
-        } else {
-            return tensor.add(this);
-        }
+        return switch (tensor) {
+            case Scalar scalar -> applyOperation(a -> a + scalar.get());
+            case Vector vector -> applyVectorOperation(vector, Float::sum);
+            case Matrix matrix -> applyMatrixOperation(matrix, Float::sum);
+            default -> tensor.add(this);
+        };
     }
     
     @Override
     public Tensor subtract(Tensor tensor) {
-        if (tensor instanceof Scalar) {
-            return applyOperation(a -> a - ((Scalar) tensor).get());
-        } else if (tensor instanceof Vector) {
-            return applyVectorOperation((Vector) tensor, (a, b) -> a - b);
-        } else if (tensor instanceof Matrix) {
-            return applyMatrixOperation((Matrix) tensor, (a, b) -> a - b);
-        } else {
-            return tensor.subtract(this);
-        }
+        return switch (tensor) {
+            case Scalar scalar -> applyOperation(a -> a - scalar.get());
+            case Vector vector -> applyVectorOperation(vector, (a, b) -> a - b);
+            case Matrix matrix -> applyMatrixOperation(matrix, (a, b) -> a - b);
+            default -> tensor.subtract(this);
+        };
     }
     
     @Override
     public Tensor multiply(Tensor tensor) {
-        if (tensor instanceof Scalar) {
-            return applyOperation(a -> a * ((Scalar) tensor).get());
-        } else if (tensor instanceof Vector) {
-            // Element-wise with broadcast along columns
-            return applyVectorOperation((Vector) tensor, (a, b) -> a * b);
-        } else if (tensor instanceof Matrix) {
-            return applyMatrixOperation((Matrix) tensor, (a, b) -> a * b);
-        } else {
-            return tensor.multiply(this);
-        }
+        return switch (tensor) {
+            case Scalar scalar -> applyOperation(a -> a * scalar.get());
+            case Vector vector ->
+                // Element-wise with broadcast along columns
+                applyVectorOperation(vector, (a, b) -> a * b);
+            case Matrix matrix -> applyMatrixOperation(matrix, (a, b) -> a * b);
+            default -> tensor.multiply(this);
+        };
     }
     
     /**
@@ -100,12 +92,10 @@ public class Matrix extends Tensor {
      * a.__mul__(b) = [3 4 12]
      * }</pre>
      *
-     * @param tensor
      * @return
      */
     @NotNull
-    private Matrix mm(Matrix tensor) {
-        Matrix matrix = tensor;
+    private Matrix mm(Matrix matrix) {
         if (ENABLE_SHAPE_CHECKS && this.values[0].length != matrix.values.length)
             throw new IllegalArgumentException("Matmul dimension mismatch: (" + this.values.length + "," + this.values[0].length + ") @ (" + matrix.values.length + "," + matrix.values[0].length + ")");
         float[][] result = new float[this.values.length][matrix.values[0].length];
@@ -132,13 +122,11 @@ public class Matrix extends Tensor {
      * a.__mul__(b) = [3 4 12]
      * }</pre>
      *
-     * @param tensor
      * @return
      */
     @NotNull
-    private Vector mv(Vector tensor) {
+    private Vector mv(Vector vector) {
         // Matrix-vector multiplication
-        Vector vector = tensor;
         if (ENABLE_SHAPE_CHECKS && values[0].length != vector.shape()[0])
             throw new IllegalArgumentException("Matmul Matrix@Vector mismatch: cols=" + values[0].length + " vs vector length=" + vector.shape()[0]);
         float[] result = new float[this.values.length];
@@ -159,27 +147,23 @@ public class Matrix extends Tensor {
     
     @Override
     public Tensor matmul(Tensor tensor) {
-        if (tensor instanceof Vector) {
-            return mv((Vector) tensor);
-        } else if (tensor instanceof Matrix) {
-            return mm((Matrix) tensor);
-        } else if (tensor instanceof Scalar) {
-            throw new IllegalArgumentException("Matrix @ Scalar is not defined in NumPy");
-        }
-        throw new IllegalArgumentException("Unsupported matmul for Matrix with " + tensor.type());
+        return switch (tensor) {
+            case Vector vector -> mv(vector);
+            case Matrix matrix -> mm(matrix);
+            case Scalar _ -> throw new IllegalArgumentException("Matrix @ Scalar is not defined in NumPy");
+            case null, default ->
+                throw new IllegalArgumentException("Unsupported matmul for Matrix with " + tensor.type());
+        };
     }
     
     @Override
     public Tensor divide(Tensor tensor) {
-        if (tensor instanceof Scalar) {
-            return applyOperation(a -> a / ((Scalar) tensor).get());
-        } else if (tensor instanceof Vector) {
-            return applyVectorOperation((Vector) tensor, (a, b) -> a / b);
-        } else if (tensor instanceof Matrix) {
-            return applyMatrixOperation((Matrix) tensor, (a, b) -> a / b);
-        } else {
-            return tensor.divide(this);
-        }
+        return switch (tensor) {
+            case Scalar scalar -> applyOperation(a -> a / scalar.get());
+            case Vector vector -> applyVectorOperation(vector, (a, b) -> a / b);
+            case Matrix matrix -> applyMatrixOperation(matrix, (a, b) -> a / b);
+            default -> tensor.divide(this);
+        };
     }
     
     @Override

@@ -56,7 +56,7 @@ public class ComparePerformanceTest {
         y[label] = 1f;
         return new Vector(y);
     }
-
+    
     @Test
     void compareOldAndNewImplementationsOnMnistSubset() {
         // Load a modest subset to keep runtime short and deterministic enough

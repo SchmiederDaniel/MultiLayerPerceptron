@@ -7,10 +7,8 @@ import neuralnetwork.optimizer.Optimizer;
 import neuralnetwork.optimizer.OptimizerType;
 import neuralnetwork.optimizer.SGD;
 
-public class Dense extends Layer {
+public class Dense extends LearnableLayer {
     private final OptimizerType optimizerType;
-    public Matrix W;
-    public Vector b;
     
     private Vector lastInput;
     
@@ -22,6 +20,7 @@ public class Dense extends Layer {
     }
     
     public Dense(Matrix W, Vector b, OptimizerType optimizerType) {
+        super(W, b);
         this.W = W;
         this.b = b;
         this.optimizer = createOptimizer(optimizerType);

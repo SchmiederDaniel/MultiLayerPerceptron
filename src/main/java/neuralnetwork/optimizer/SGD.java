@@ -1,14 +1,13 @@
 package neuralnetwork.optimizer;
 
-import neuralnetwork.layer.Dense;
-import neuralnetwork.math.Matrix;
+import neuralnetwork.layer.LearnableLayer;
 import neuralnetwork.math.Tensor;
 import neuralnetwork.math.Vector;
 
 public class SGD implements Optimizer {
-    private final Dense layer;
+        private final LearnableLayer layer;
     
-    public SGD(Dense layer) {
+    public SGD(LearnableLayer layer) {
         this.layer = layer;
     }
     
@@ -20,7 +19,7 @@ public class SGD implements Optimizer {
         Tensor lrT = Tensor.of(learningRate); // Scalar
         
         // W_new = W - lr * dW  (elementwise scalar broadcast)
-        layer.W = (Matrix) layer.W.subtract(dWT.multiply(lrT));
+        layer.W = (neuralnetwork.math.Matrix) layer.W.subtract(dWT.multiply(lrT));
         
         // b_new = b - lr * db
         layer.b = (Vector) layer.b.subtract(dbT.multiply(lrT));

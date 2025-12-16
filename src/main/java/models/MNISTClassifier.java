@@ -11,6 +11,10 @@ import neuralnetwork.math.Tensor;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.IOException;
@@ -24,7 +28,7 @@ public class MNISTClassifier extends JFrame {
     
     public MNISTClassifier() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(900, 500);
+        setSize(1500, 500);
         add(new Scene());
         
         setVisible(true);
@@ -32,28 +36,86 @@ public class MNISTClassifier extends JFrame {
     }
     
     class Scene extends JPanel {
-        LossFunction lossFunction = new BinaryCrossEntropy();
+        LossFunction lossFunction = new CategoricalCrossEntropy();
         NeuralNetwork neuralNetwork = new NetworkBuilder()
             .optimizer.adam()
-            .layer.dense(28 * 28, 400)
-            .activation.sigmoid()
-            .layer.dense(400, 200)
-            .activation.sigmoid()
-            .layer.dense(200, 100)
-            .activation.sigmoid()
-            .layer.dense(100, 80)
-            .activation.sigmoid()
-            .layer.dense(80, 10)
-            .activation.sigmoid()
+            .distribution.xavier()
+            .layer.reshape(1, 28, 28)
+            .layer.conv2D(1, 20, 7, 2, 0)
+            .activation.gelu()
+            .layer.conv2D(20, 20, 3, 2, 0)
+            .activation.gelu()
+            .layer.conv2D(20, 20, 3, 2, 0)
+            .activation.gelu()
+            .layer.conv2D(20, 20, 3, 2, 0)
+            .activation.gelu()
+            .layer.flatten()
+            .layer.dense(20, 20)
+            .activation.gelu()
+            .layer.dense(20, 10)
+            .activation.softMax()
             .build();
         List<int[]> imageList = MNISTLoader.readTrainImagesSafe();
         List<Integer> labelList = MNISTLoader.readTrainLabelsSafe();
         List<int[]> testImageList = MNISTLoader.readTestImagesSafe();
         List<Integer> testLabelList = MNISTLoader.readTestLabelsSafe();
         float learningRate = 0.0001f;
+        int lastX = -1;
+        int lastY = -1;
+        Scene scene = this;
         
         public Scene() {
+            setLayout(null);
+            Button resetButton = new Button();
+            resetButton.setLocation(10, 10);
+            resetButton.setSize(25, 25);
+            resetButton.addActionListener(e -> {
+                Graphics2D graphics = ownImage.createGraphics();
+                graphics.clearRect(0, 0, 28, 28);
+                graphics.dispose();
+            });
+            add(resetButton);
+            
             displayImagePixels = testImageList.get(paintIndex);
+            setBackground(new Color(0, 0, 0, 0));
+            
+            addMouseMotionListener(new MouseMotionAdapter() {
+                @Override
+                public void mouseDragged(MouseEvent e) {
+                    if (lastX != -1) {
+                        Graphics2D graphics = ownImage.createGraphics();
+                        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        graphics.setColor(Color.white);
+                        graphics.setStroke(new BasicStroke(1.5f));
+                        graphics.drawLine(
+                            (int) ((float) lastX / scene.getHeight() * 28f),
+                            (int) ((float) lastY / scene.getHeight() * 28f),
+                            (int) ((float) e.getX() / scene.getHeight() * 28f),
+                            (int) ((float) e.getY() / scene.getHeight() * 28f)
+                        );
+                        repaint();
+                    }
+                    lastX = e.getX();
+                    lastY = e.getY();
+                }
+            });
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    super.mouseClicked(e);
+                    lastX = e.getX();
+                    lastY = e.getY();
+                    repaint();
+                }
+                
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    super.mouseReleased(e);
+                    lastX = -1;
+                    lastY = -1;
+                    repaint();
+                }
+            });
             
             startAsyncThreads();
         }
@@ -164,6 +226,8 @@ public class MNISTClassifier extends JFrame {
         Font font = new Font("Arial", Font.BOLD, 12);
         int paintIndex;
         
+        BufferedImage ownImage = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
+        int[] ownImagePixels = ((DataBufferInt) ownImage.getRaster().getDataBuffer()).getData();
         int[] displayImagePixels;
         
         float highestValueOfArray(float[] array) {
@@ -176,42 +240,21 @@ public class MNISTClassifier extends JFrame {
         }
         
         public void paint(Graphics graphics) {
-            super.paint(graphics);
-            
-            BufferedImage image = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
-            int[] pixelsOfImage = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
-            for (int i = 0; i < pixelsOfImage.length; i++) {
-                int brightness = displayImagePixels[i];
-                pixelsOfImage[i] = new Color(brightness, brightness, brightness).getRGB();
-            }
-            graphics.drawImage(image, 0, 0, getWidth() / 2, getHeight(), null);
-            
-            float[] x = pixelsToFloat(displayImagePixels);
-            Tensor predict = neuralNetwork.predictThreadSafe(x);
-            float[] y = predict.toFlatArray();
-            
-            float highestValue = highestValueOfArray(y);
+            Graphics2D graphics2D = (Graphics2D) graphics;
+            graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            graphics2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             graphics.setColor(Color.white);
-            graphics.setFont(font);
-            int label = testLabelList.get(paintIndex);
-            for (int i = 0; i < y.length; i++) {
-                if (y[i] == highestValue) {
-                    if (i == label)
-                        graphics.setColor(Color.green);
-                    else
-                        graphics.setColor(Color.red);
-                } else {
-                    graphics.setColor(Color.white);
-                }
-                graphics.drawString(i + "=" + (int) (y[i] * 100d) + "%", (int) (10 + i / 10d * getWidth() / 2), getHeight() - 20);
-            }
+            graphics.fillRect(0, 0, getWidth(), getHeight());
+            
+            drawMNISTImage(graphics);
+            drawOwnImage(graphics);
             
             drawLine(
                 graphics,
                 testingErrorList,
-                getWidth() / 2,
+                getHeight() * 2,
                 0,
-                getWidth() / 2,
+                getWidth(),
                 getHeight()
             );
             
@@ -219,10 +262,60 @@ public class MNISTClassifier extends JFrame {
                 graphics.setColor(Color.black);
                 graphics.setFont(font);
                 graphics.drawString(
-                    "Error: " + (testingErrorList.get(testingErrorList.size() - 1)),
-                    getWidth() / 2 + 10,
+                    "Error: " + (testingErrorList.getLast()),
+                    getHeight() * 2 + 10,
                     getHeight() - 20
                 );
+            }
+            
+            super.paint(graphics);
+        }
+        
+        void drawOwnImage(Graphics graphics) {
+            graphics.drawImage(ownImage, 0, 0, getHeight(), getHeight(), null);
+            
+            float[] x = new float[28 * 28];
+            for (int i = 0; i < x.length; i++) {
+                x[i] = new Color(ownImagePixels[i]).getRed() / 255f;
+            }
+            Tensor predict = neuralNetwork.predictThreadSafe(Tensor.of(x));
+            float[] y = predict.toFlatArray();
+            
+            int label = -1;
+            drawClassificationText(graphics, 0, y, label);
+        }
+        
+        void drawMNISTImage(Graphics graphics) {
+            BufferedImage image = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
+            int[] pixelsOfImage = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
+            for (int i = 0; i < pixelsOfImage.length; i++) {
+                int brightness = displayImagePixels[i];
+                pixelsOfImage[i] = new Color(brightness, brightness, brightness).getRGB();
+            }
+            graphics.drawImage(image, getHeight(), 0, getHeight(), getHeight(), null);
+            
+            float[] x = pixelsToFloat(displayImagePixels);
+            Tensor predict = neuralNetwork.predictThreadSafe(x);
+            float[] y = predict.toFlatArray();
+            
+            int label = testLabelList.get(paintIndex);
+            drawClassificationText(graphics, getHeight(), y, label);
+        }
+        
+        void drawClassificationText(Graphics graphics, int posX, float[] y, int label) {
+            graphics.setColor(Color.white);
+            graphics.setFont(font);
+            float highestValue = highestValueOfArray(y);
+            for (int i = 0; i < y.length; i++) {
+                if (y[i] == highestValue) {
+                    if (i == label || label == -1)
+                        graphics.setColor(Color.green);
+                    else
+                        graphics.setColor(Color.red);
+                } else {
+                    graphics.setColor(Color.white);
+                }
+                graphics.drawString(i + "=" + (int) (y[i] * 100d) + "%", (int) (10 + i / 11d * getHeight()) + posX, getHeight() - 20);
             }
         }
         

@@ -5,13 +5,14 @@ import neuralnetwork.NetworkBuilder;
 import neuralnetwork.NeuralNetwork;
 import neuralnetwork.lossfunction.BinaryCrossEntropy;
 import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.lossfunction.SoftmaxCrossEntropy;
+import neuralnetwork.lossfunction.MeanSquareError;
 import neuralnetwork.math.Tensor;
-import oldneuralnetwork.layer.activation.SoftMax;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GAN extends JFrame {
@@ -27,7 +28,7 @@ public class GAN extends JFrame {
         scene = new Scene();
         add(scene);
         
-        setSize(600, 300);
+        setSize(800, 400);
         setVisible(true);
         setLocationRelativeTo(null);
         
@@ -73,9 +74,9 @@ public class GAN extends JFrame {
         int[][] images;
         int[] labels;
         int noiseCount = 10;
-        //    LossFunction generatorLoss = new AbsoluteLoss();
-        LossFunction discriminatorLoss = new BinaryCrossEntropy();
-        float learningRate = 0.0001f;
+        LossFunction lossFunction = new BinaryCrossEntropy();
+        LossFunction generatorLossFunction = new BinaryCrossEntropy();
+        float learningRate = 0.00001f;
         
         public Scene() {
             images = MNISTLoader.readTrainImagesSafe().stream().toArray(int[][]::new);
@@ -87,28 +88,28 @@ public class GAN extends JFrame {
             generator = new NetworkBuilder()
                 .optimizer.adam()
                 .distribution.xavier()
-                .layer.dense(noiseCount + 10, 50)
-                .activation.sigmoid()
-                .layer.dense(50, 150)
-                .activation.sigmoid()
-                .layer.dense(150, 200)
-                .activation.sigmoid()
-                .layer.dense(200, 200)
-                .activation.sigmoid()
-                .layer.dense(200, imageResolution * imageResolution)
+                .layer.dense(noiseCount, 128)
+                .activation.gelu()
+                .layer.dense(128, 256)
+                .activation.gelu()
+                .layer.dense(256, 512)
+                .activation.gelu()
+                .layer.dense(512, 1024)
+                .activation.gelu()
+                .layer.dense(1024, imageResolution * imageResolution)
                 .activation.sigmoid()
                 .build();
             
             discriminator = new NetworkBuilder()
                 .optimizer.adam()
                 .distribution.xavier()
-                .layer.dense(imageResolution * imageResolution + 10, 200)
-                .activation.sigmoid()
-                .layer.dense(200, 100)
-                .activation.sigmoid()
-                .layer.dense(100, 50)
-                .activation.sigmoid()
-                .layer.dense(50, 1)
+                .layer.dense(imageResolution * imageResolution, 512)
+                .activation.gelu()
+                .layer.dense(512, 256)
+                .activation.gelu()
+                .layer.dense(256, 256)
+                .activation.gelu()
+                .layer.dense(256, 1)
                 .activation.sigmoid()
                 .build();
         }
@@ -116,82 +117,87 @@ public class GAN extends JFrame {
         
         float createNoise() {
 //            return (float) Math.random() * Float.MAX_VALUE - Float.MAX_VALUE / 2;
-            return ThreadLocalRandom.current().nextFloat(Float.MIN_VALUE, Float.MAX_VALUE);
+//            return ThreadLocalRandom.current().nextFloat(Float.MIN_VALUE, Float.MAX_VALUE);
+            return ThreadLocalRandom.current().nextFloat(-1f, 1f);
         }
         
         int trainIndex;
+        
+        CopyOnWriteArrayList<Float> generatorLoss = new CopyOnWriteArrayList<>();
+        CopyOnWriteArrayList<Float> discriminatorLossReal = new CopyOnWriteArrayList<>();
+        CopyOnWriteArrayList<Float> discriminatorLossFake = new CopyOnWriteArrayList<>();
         
         public void train() {
             trainIndex++;
             if (trainIndex >= images.length)
                 trainIndex = 0;
             
-            float[] noiseData = new float[noiseCount + 10];
+            trainGenerator();
+            trainDiscriminator();
+        }
+        
+        Tensor generateData() {
+            float[] noiseData = new float[noiseCount];
             for (int i = 0; i < noiseCount; i++)
                 noiseData[i] = createNoise();
             
-            int fakeLabel = (int) (Math.random() * 10f);
-            noiseData[noiseCount + fakeLabel] = 1;
-            
-            float[] generatedData = generator.predict(Tensor.of(noiseData)).transpose().toFlatArray();
-            float[] discriminatorInput = new float[generatedData.length + 10];
-            System.arraycopy(generatedData, 0, discriminatorInput, 0, generatedData.length);
-            discriminatorInput[generatedData.length + fakeLabel] = 1;
-//      float discriminated = discriminator.predict(Tensor.of(discriminatorInput)).toFlatArray()[0];
+            return generator.predict(Tensor.of(noiseData));
+        }
+        
+        void trainGenerator() {
+            Tensor generatedData = generateData();
+            float[] generatedFloat = generatedData.toFlatArray();
             
             // train generator
             Tensor grad = discriminator.trainSingleGrad(
-                discriminatorLoss,
-                Tensor.of(discriminatorInput),
-                Tensor.of(new float[] { 0 }),
-                learningRate
+                lossFunction,
+                Tensor.of(generatedFloat),
+                Tensor.of(new float[] { 1 }),
+                0
             );
-            float[] data = grad.transpose().toFlatArray();
-            float[] truncated = new float[imageResolution * imageResolution];
-            System.arraycopy(data, 0, truncated, 0, truncated.length);
-            grad = Tensor.of(truncated);
-            
+            generatorLoss.add(generatorLossFunction.loss(grad, generatedData));
             generator.backpropagate(
                 grad,
                 learningRate
             );
+        }
+        
+        boolean trainDiscriminatorLast = false;
+        
+        void trainDiscriminator() {
+            Tensor generatedData = generateData();
             
-            // train discriminator
-            int[] pixels = images[trainIndex];
-            int label = labels[trainIndex];
-            float[] realData = pixelsToFloat(pixels);
-//      discriminatorInput = new float[realData.length + 10];
-            System.arraycopy(realData, 0, discriminatorInput, 0, realData.length);
-            discriminatorInput[realData.length + label] = 1;
-            
-            discriminator.trainSingle(
-                discriminatorLoss,
-                Tensor.of(discriminatorInput),
-                Tensor.of(new float[] { 0 }),
-                learningRate * 0.01f
-            );
-
-//      discriminatorInput = new float[generatedData.length + 10];
-            System.arraycopy(generatedData, 0, discriminatorInput, 0, generatedData.length);
-            discriminatorInput[generatedData.length + fakeLabel] = 1;
-            discriminator.trainSingle(
-                discriminatorLoss,
-                Tensor.of(discriminatorInput),
-                Tensor.of(new float[] { 1 }),
-                learningRate * 0.01f
-            );
+            if (trainDiscriminatorLast) {
+                // train discriminator
+                int[] pixels = images[trainIndex];
+                float[] realData = pixelsToFloat(pixels);
+                discriminatorLossReal.add(
+                    discriminator.trainSingle(
+                        lossFunction,
+                        Tensor.of(realData),
+                        Tensor.of(new float[] { 1 }),
+                        learningRate
+                    )
+                );
+            } else {
+                discriminatorLossFake.add(
+                    discriminator.trainSingle(
+                        lossFunction,
+                        generatedData,
+                        Tensor.of(new float[] { 0 }),
+                        learningRate
+                    )
+                );
+            }
+            trainDiscriminatorLast = !trainDiscriminatorLast;
         }
         
         int thinkIndex;
-        int thinkLabel;
         float[] noiseThink = new float[noiseCount];
         
         void think() {
             thinkIndex++;
-            thinkLabel++;
             
-            if (thinkLabel > 9)
-                thinkLabel = 0;
             thinkIndex %= images.length;
             
             for (int i = 0; i < noiseCount; i++) {
@@ -199,16 +205,63 @@ public class GAN extends JFrame {
             }
         }
         
+        private void drawLine(Graphics graphics, CopyOnWriteArrayList<Float> set, Color color, int x, int y, float width, float height) {
+            graphics.setColor(color);
+            float partialWidth = width / set.size();
+            ((Graphics2D) graphics).setStroke(new BasicStroke(1f));
+            for (int i = 1; i < set.size(); i++) {
+                float value = 1f - set.get(i);
+                float last = 1f - set.get(i - 1);
+                graphics.drawLine(
+                    x + (int) ((i - 1) * partialWidth),
+                    y + (int) (height * value),
+                    x + (int) (i * partialWidth),
+                    y + (int) (height * last)
+                );
+            }
+        }
+        
+//        float getLearningRate(CopyOnWriteArrayList<Float> list, boolean invert) {
+//            if (list.isEmpty())
+//                return 0.0001f;
+//            Float last = list.getLast();
+//            last=Math.min(1, last);
+//            if (invert)
+//                last = 1 - last;
+//            return last * 0.00001f;
+//        }
+        
         public void paint(Graphics graphics) {
+            super.paint(graphics);
             if (thinkIndex == 0)
                 return;
+            graphics.setFont(new Font("Arial", Font.BOLD, 12));
             
-            float[] thinkInput = new float[noiseCount + 10];
-            System.arraycopy(noiseThink, 0, thinkInput, 0, noiseThink.length);
-            thinkInput[noiseCount + thinkLabel] = 1;
-            float[] generatedData = generator.predictThreadSafe(thinkInput).transpose().toFlatArray();
+            setTitle("training steps: " + trainIndex + " Losscount: " + generatorLoss.size());
+            
+            while (discriminatorLossFake.size() > 30000) {
+                discriminatorLossFake.removeFirst();
+                discriminatorLossReal.removeFirst();
+                generatorLoss.removeFirst();
+                generatorLoss.removeFirst();
+            }
+            
+            int height = getHeight();
+            drawLine(graphics, generatorLoss, new Color(0, 100, 0), getWidth() / 2, 0, height, height);
+            drawLine(graphics, discriminatorLossReal, Color.red, getWidth() / 2, 0, height, height);
+            drawLine(graphics, discriminatorLossFake, Color.MAGENTA, getWidth() / 2, 0, height, height);
+            
+            if (!discriminatorLossReal.isEmpty()) {
+                graphics.setColor(new Color(60, 0, 0));
+                graphics.drawString("Discriminator loss real: " + discriminatorLossReal.getLast(), getWidth() / 2 + 10, 10);
+                graphics.setColor(new Color(60, 0, 60));
+                graphics.drawString("Discriminator loss fake: " + discriminatorLossFake.getLast(), getWidth() / 2 + 10, 25);
+                graphics.setColor(new Color(0, 60, 0));
+                graphics.drawString("Generator loss: " + generatorLoss.getLast(), getWidth() / 2 + 10, 40);
+            }
+            
+            float[] generatedData = generateData().toFlatArray();
             int[] pixels = floatToPixels(generatedData);
-            
             BufferedImage bufferedImage = new BufferedImage(imageResolution, imageResolution, BufferedImage.TYPE_INT_RGB);
             
             for (int i = 0; i < imageResolution * imageResolution; i++) {

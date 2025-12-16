@@ -19,7 +19,7 @@ public class AutoEncoder extends JFrame {
         new AutoEncoder();
     }
     
-    float learningRate = 0.00005f;
+    float learningRate = 0.0001f;
     
     public AutoEncoder() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -62,38 +62,28 @@ public class AutoEncoder extends JFrame {
         NeuralNetwork neuralNetworkEncoder = new NetworkBuilder()
             .optimizer.adam()
             .distribution.xavier()
-            .layer.dense(784, 300)
-            .activation.leakyReLu()
-            .layer.dense(300, 100)
-            .activation.leakyReLu()
-            .layer.dense(100, 50)
-            .activation.leakyReLu()
-            .layer.dense(50, 50)
-            .activation.leakyReLu()
-            .layer.dense(50, 50)
-            .activation.leakyReLu()
-            .layer.dense(50, 30)
-            .activation.leakyReLu()
-            .layer.dense(30, 1)
-            .activation.leakyReLu()
+            .layer.reshape(1, 28, 28)
+            .layer.conv2D(1, 25, 7, 2, 0)
+            .activation.gelu()
+            .layer.conv2D(25, 25, 3, 2, 0)
+            .activation.gelu()
+            .layer.conv2D(25, 25, 3, 2, 0)
+            .activation.gelu()
+            .layer.flatten()
+            .layer.dense(100, 1)
+            .activation.gelu()
             .build();
         NeuralNetwork neuralNetworkDecoder = new NetworkBuilder()
             .optimizer.adam()
             .distribution.xavier()
-            .layer.dense(1, 200)
-            .activation.leakyReLu()
-            .layer.dense(200, 50)
-            .activation.leakyReLu()
-            .layer.dense(50, 50)
-            .activation.leakyReLu()
-            .layer.dense(50, 50)
-            .activation.leakyReLu()
-            .layer.dense(50, 100)
-            .activation.leakyReLu()
-            .layer.dense(100, 300)
-            .activation.leakyReLu()
-            .layer.dense(300, 784)
-            .activation.sigmoid()
+            .layer.dense(1, 300)
+            .activation.gelu()
+            .layer.dense(300, 400)
+            .activation.gelu()
+            .layer.dense(400, 400)
+            .activation.gelu()
+            .layer.dense(400, 784)
+            .activation.gelu()
             .build();
         private final static LossFunction decoderLossFunction = new L1();
         
