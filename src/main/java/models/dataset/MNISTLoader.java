@@ -9,23 +9,23 @@ import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MNISTLoader {
-    public static List<int[]> readTrainImagesSafe() {
-        return readImagesSafe("train-images.idx3-ubyte");
+    public static List<int[]> trainData() {
+        return readImages("train-images.idx3-ubyte");
     }
     
-    public static List<int[]> readTestImagesSafe() {
-        return readImagesSafe("t10k-images.idx3-ubyte");
+    public static List<int[]> testData() {
+        return readImages("t10k-images.idx3-ubyte");
     }
     
-    public static List<Integer> readTrainLabelsSafe() {
-        return readTestLabelsSafe("train-labels.idx1-ubyte");
+    public static List<Integer> trainLabels() {
+        return readLabels("train-labels.idx1-ubyte");
     }
     
-    public static List<Integer> readTestLabelsSafe() {
-        return readTestLabelsSafe("t10k-labels.idx1-ubyte");
+    public static List<Integer> testLabels() {
+        return readLabels("t10k-labels.idx1-ubyte");
     }
     
-    private static List<int[]> readImagesSafe(String fileName) {
+    private static List<int[]> readImages(String fileName) {
         byte[] raw = readResource(fileName);
         List<int[]> images = new ArrayList<>();
         byte[] imageBytes = new byte[raw.length - 16];
@@ -42,7 +42,7 @@ public class MNISTLoader {
         return images;
     }
     
-    private static List<Integer> readTestLabelsSafe(String fileName) {
+    private static List<Integer> readLabels(String fileName) {
         byte[] raw = readResource(fileName);
         List<Integer> labels = new CopyOnWriteArrayList<>();
         byte[] labelBytes = new byte[raw.length - 8];

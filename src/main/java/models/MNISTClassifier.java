@@ -14,7 +14,6 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
-import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.IOException;
@@ -55,10 +54,10 @@ public class MNISTClassifier extends JFrame {
             .layer.dense(20, 10)
             .activation.softMax()
             .build();
-        List<int[]> imageList = MNISTLoader.readTrainImagesSafe();
-        List<Integer> labelList = MNISTLoader.readTrainLabelsSafe();
-        List<int[]> testImageList = MNISTLoader.readTestImagesSafe();
-        List<Integer> testLabelList = MNISTLoader.readTestLabelsSafe();
+        List<int[]> imageList = MNISTLoader.trainData();
+        List<Integer> labelList = MNISTLoader.trainLabels();
+        List<int[]> testImageList = MNISTLoader.testData();
+        List<Integer> testLabelList = MNISTLoader.testLabels();
         float learningRate = 0.0001f;
         int lastX = -1;
         int lastY = -1;

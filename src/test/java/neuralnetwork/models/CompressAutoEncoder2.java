@@ -83,8 +83,8 @@ public class CompressAutoEncoder2 extends JFrame {
     // a algorithm would be usefull which compares the generated image and how it deviates from pixels near by from the original
     
     public Scene() {
-      imageList = MNISTLoader.readTrainImagesSafe();
-      labelList = MNISTLoader.readTrainLabelsSafe();
+      imageList = MNISTLoader.trainData();
+      labelList = MNISTLoader.trainLabels();
       
       startAsyncThreads();
     }

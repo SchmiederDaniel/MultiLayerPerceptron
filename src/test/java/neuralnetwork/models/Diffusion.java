@@ -104,14 +104,14 @@ public class Diffusion extends JFrame {
     static float thinkStepSize = 1f; // 0.5d = best
     
     public Scene() {
-      images = MNISTLoader.readTrainImagesSafe().stream().toArray(int[][]::new);
+      images = MNISTLoader.trainData().stream().toArray(int[][]::new);
       if (imageResolution != 28)
         for (int i = 0; i < images.length; i++)
           images[i] = downScale(images[i], imageResolution);
-      labels = MNISTLoader.readTrainLabelsSafe().stream().mapToInt(i -> i).toArray();
+      labels = MNISTLoader.trainLabels().stream().mapToInt(i -> i).toArray();
       
-      testImages = MNISTLoader.readTestImagesSafe().stream().toArray(int[][]::new);
-      testLabels = MNISTLoader.readTestLabelsSafe().stream().mapToInt(i -> i).toArray();
+      testImages = MNISTLoader.testData().stream().toArray(int[][]::new);
+      testLabels = MNISTLoader.testLabels().stream().mapToInt(i -> i).toArray();
       
       startAsyncThreads();
     }

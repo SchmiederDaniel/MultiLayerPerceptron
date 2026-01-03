@@ -5,14 +5,12 @@ import neuralnetwork.NetworkBuilder;
 import neuralnetwork.NeuralNetwork;
 import neuralnetwork.lossfunction.BinaryCrossEntropy;
 import neuralnetwork.lossfunction.LossFunction;
-import neuralnetwork.lossfunction.MeanSquareError;
 import neuralnetwork.math.Tensor;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GAN extends JFrame {
@@ -79,11 +77,11 @@ public class GAN extends JFrame {
         float learningRate = 0.00001f;
         
         public Scene() {
-            images = MNISTLoader.readTrainImagesSafe().stream().toArray(int[][]::new);
+            images = MNISTLoader.trainData().stream().toArray(int[][]::new);
             if (imageResolution != 28)
                 for (int i = 0; i < images.length; i++)
                     images[i] = downScale(images[i], imageResolution);
-            labels = MNISTLoader.readTrainLabelsSafe().stream().mapToInt(i -> i).toArray();
+            labels = MNISTLoader.trainLabels().stream().mapToInt(i -> i).toArray();
             
             generator = new NetworkBuilder()
                 .optimizer.adam()
@@ -105,8 +103,10 @@ public class GAN extends JFrame {
                 .distribution.xavier()
                 .layer.dense(imageResolution * imageResolution, 512)
                 .activation.gelu()
+                .layer.dropOut(0.3f)
                 .layer.dense(512, 256)
                 .activation.gelu()
+                .layer.dropOut(0.3f)
                 .layer.dense(256, 256)
                 .activation.gelu()
                 .layer.dense(256, 1)
@@ -214,9 +214,9 @@ public class GAN extends JFrame {
                 float last = 1f - set.get(i - 1);
                 graphics.drawLine(
                     x + (int) ((i - 1) * partialWidth),
-                    y + (int) (height * value),
+                    y + (int) (height * last),
                     x + (int) (i * partialWidth),
-                    y + (int) (height * last)
+                    y + (int) (height * value)
                 );
             }
         }

@@ -87,11 +87,11 @@ public class GAN3 extends JFrame {
     }
     
     public Scene() {
-      images = MNISTLoader.readTrainImagesSafe().stream().toArray(int[][]::new);
+      images = MNISTLoader.trainData().stream().toArray(int[][]::new);
       if (imageResolution != 28)
         for (int i = 0; i < images.length; i++)
           images[i] = downScale(images[i], imageResolution);
-      labels = MNISTLoader.readTrainLabelsSafe().stream().mapToInt(i -> i).toArray();
+      labels = MNISTLoader.trainLabels().stream().mapToInt(i -> i).toArray();
       
       generator = new NetworkBuilder()
           .distribution.xavier()

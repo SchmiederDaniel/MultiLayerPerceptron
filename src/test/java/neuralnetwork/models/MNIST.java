@@ -45,11 +45,11 @@ public class MNIST extends JFrame {
     List<Integer> testLabelList;
     
     public Scene() {
-      imageList = MNISTLoader.readTrainImagesSafe();
-      labelList = MNISTLoader.readTrainLabelsSafe();
+      imageList = MNISTLoader.trainData();
+      labelList = MNISTLoader.trainLabels();
       
-      testImageList = MNISTLoader.readTestImagesSafe();
-      testLabelList = MNISTLoader.readTestLabelsSafe();
+      testImageList = MNISTLoader.testData();
+      testLabelList = MNISTLoader.testLabels();
       
       displayImagePixels = testImageList.get(paintIndex);
       

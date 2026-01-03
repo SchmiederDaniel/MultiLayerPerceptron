@@ -44,8 +44,8 @@ public class AutoEncoderVisualization extends JFrame {
         .build();
     
     public static void main(String[] args) {
-        imageList = MNISTLoader.readTrainImagesSafe();
-        labelList = MNISTLoader.readTrainLabelsSafe();
+        imageList = MNISTLoader.trainData();
+        labelList = MNISTLoader.trainLabels();
         
         new AutoEncoderVisualization();
         new TwoDimVisualizer();

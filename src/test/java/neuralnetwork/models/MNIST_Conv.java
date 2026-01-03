@@ -40,8 +40,8 @@ public class MNIST_Conv extends JFrame {
     List<Integer> labelList;
     
     public Scene() throws IOException {
-      imageList = MNISTLoader.readTrainImagesSafe();
-      labelList = MNISTLoader.readTrainLabelsSafe();
+      imageList = MNISTLoader.trainData();
+      labelList = MNISTLoader.trainLabels();
       
       startAsyncThreads();
     }

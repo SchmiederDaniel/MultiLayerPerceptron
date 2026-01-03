@@ -4,7 +4,6 @@ import models.dataset.MNISTLoader;
 import neuralnetwork.math.Matrix;
 import neuralnetwork.math.Tensor;
 import neuralnetwork.math.Vector;
-import neuralnetwork.models.MNIST;
 import neuralnetwork.optimizer.OptimizerType;
 import oldneuralnetwork.NetworkBuilder;
 import oldneuralnetwork.NumpyArray;
@@ -14,12 +13,7 @@ import neuralnetwork.activation.Sigmoid;
 import neuralnetwork.layer.Dense;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,8 +54,8 @@ public class ComparePerformanceTest {
     @Test
     void compareOldAndNewImplementationsOnMnistSubset() {
         // Load a modest subset to keep runtime short and deterministic enough
-        List<int[]> images = MNISTLoader.readTrainImagesSafe();
-        List<Integer> labels = MNISTLoader.readTrainLabelsSafe();
+        List<int[]> images = MNISTLoader.trainData();
+        List<Integer> labels = MNISTLoader.trainLabels();
 
         int trainN = Math.min(300, images.size());
         int evalN = Math.min(100, trainN);

@@ -76,11 +76,11 @@ public class GAN2 extends JFrame {
     float learningRate = 0.01f;
     
     public Scene() {
-      images = MNISTLoader.readTrainImagesSafe().stream().toArray(int[][]::new);
+      images = MNISTLoader.trainData().stream().toArray(int[][]::new);
       if (imageResolution != 28)
         for (int i = 0; i < images.length; i++)
           images[i] = downScale(images[i], imageResolution);
-      labels = MNISTLoader.readTrainLabelsSafe().stream().mapToInt(i -> i).toArray();
+      labels = MNISTLoader.trainLabels().stream().mapToInt(i -> i).toArray();
       
       generator = new NetworkBuilder()
         .layer.dense(noiseCount + 10, 256)
