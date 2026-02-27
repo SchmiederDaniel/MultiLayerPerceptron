@@ -1,6 +1,9 @@
 package models;
 
+import models.dataset.Batch;
+import models.dataset.DataSet;
 import models.dataset.MNISTLoader;
+import models.dataset.MnistDataset;
 import neuralnetwork.NetworkBuilder;
 import neuralnetwork.NeuralNetwork;
 import neuralnetwork.layer.Dense;
@@ -42,23 +45,28 @@ public class MNISTClassifier extends JFrame {
             .layer.reshape(1, 28, 28)
             .layer.conv2D(1, 20, 7, 2, 0)
             .activation.gelu()
+            .layer.dropOut(0.25f)
             .layer.conv2D(20, 20, 3, 2, 0)
             .activation.gelu()
+            .layer.dropOut(0.2f)
             .layer.conv2D(20, 20, 3, 2, 0)
             .activation.gelu()
+            .layer.dropOut(0.2f)
             .layer.conv2D(20, 20, 3, 2, 0)
             .activation.gelu()
+            .layer.dropOut(0.1f)
             .layer.flatten()
-            .layer.dense(20, 20)
+            .layer.dense(20, 40)
             .activation.gelu()
-            .layer.dense(20, 10)
+            .layer.dropOut(0.1f)
+            .layer.dense(40, 10)
             .activation.softMax()
             .build();
-        List<int[]> imageList = MNISTLoader.trainData();
-        List<Integer> labelList = MNISTLoader.trainLabels();
+        //        List<int[]> imageList = MNISTLoader.trainData();
+//        List<Integer> labelList = MNISTLoader.trainLabels();
         List<int[]> testImageList = MNISTLoader.testData();
         List<Integer> testLabelList = MNISTLoader.testLabels();
-        float learningRate = 0.0001f;
+        float learningRate = 0.0005f;
         int lastX = -1;
         int lastY = -1;
         Scene scene = this;
@@ -161,36 +169,41 @@ public class MNISTClassifier extends JFrame {
             }).start();
         }
         
-        int trainIndex;
+        //        int trainIndex;
+        DataSet trainSet = new MnistDataset(10, true, 0);
         
         void train() {
-            trainIndex++;
-            trainIndex %= imageList.size();
-            
-            int[] pixels = imageList.get(trainIndex);
-            int label = labelList.get(trainIndex);
-            
-            float[] x = pixelsToFloat(pixels);
-            float[] y = new float[10];
-            y[label] = 1;
-            
-            neuralNetwork.trainSingle(lossFunction, Tensor.of(x), Tensor.of(y), learningRate);
-            
-            for (Layer layer : neuralNetwork.layers) {
-                if (layer instanceof Dense dense) {
-                    if (trainIndex % 1000 == 0) { // remove faded out graidents
-                        Matrix w = dense.W;
-                        float[][] values = w.getValues();
-                        for (int rowIndex = 0; rowIndex < values.length; rowIndex++) {
-                            float[] row = values[rowIndex];
-                            for (int colIndex = 0; colIndex < values[0].length; colIndex++) {
-                                float v = row[colIndex];
-                                values[rowIndex][colIndex] = v;
-                            }
-                        }
-                    }
-                }
+            for (Batch batch : trainSet) {
+                neuralNetwork.train(batch.inputs, batch.targets, learningRate);
             }
+
+//            trainIndex++;
+//            trainIndex %= imageList.size();
+//            
+//            int[] pixels = imageList.get(trainIndex);
+//            int label = labelList.get(trainIndex);
+//            
+//            float[] x = pixelsToFloat(pixels);
+//            float[] y = new float[10];
+//            y[label] = 1;
+//            
+//            neuralNetwork.trainSingle(lossFunction, Tensor.of(x), Tensor.of(y), learningRate);
+//            
+//            for (Layer layer : neuralNetwork.layers) {
+//                if (layer instanceof Dense dense) {
+//                    if (trainIndex % 1000 == 0) { // remove faded out graidents
+//                        Matrix w = dense.W;
+//                        float[][] values = w.getValues();
+//                        for (int rowIndex = 0; rowIndex < values.length; rowIndex++) {
+//                            float[] row = values[rowIndex];
+//                            for (int colIndex = 0; colIndex < values[0].length; colIndex++) {
+//                                float v = row[colIndex];
+//                                values[rowIndex][colIndex] = v;
+//                            }
+//                        }
+//                    }
+//                }
+//            }
         }
         
         float[] pixelsToFloat(int[] pixels) {

@@ -1,6 +1,9 @@
 package models;
 
+import models.dataset.Batch;
+import models.dataset.DataSet;
 import models.dataset.MNISTLoader;
+import models.dataset.MnistAutoEncoderDataset;
 import neuralnetwork.NetworkBuilder;
 import neuralnetwork.NeuralNetwork;
 import neuralnetwork.lossfunction.*;
@@ -19,7 +22,7 @@ public class AutoEncoder extends JFrame {
         new AutoEncoder();
     }
     
-    float learningRate = 0.0001f;
+    float learningRate = 0.0005f;
     
     public AutoEncoder() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -58,10 +61,10 @@ public class AutoEncoder extends JFrame {
     
     class Scene extends JPanel {
         List<int[]> imageList;
-        List<Integer> labelList;
-        NeuralNetwork neuralNetworkEncoder = new NetworkBuilder()
+        NeuralNetwork autoencoder = new NetworkBuilder()
             .optimizer.adam()
             .distribution.xavier()
+            // Encoder
             .layer.reshape(1, 28, 28)
             .layer.conv2D(1, 25, 7, 2, 0)
             .activation.gelu()
@@ -70,12 +73,10 @@ public class AutoEncoder extends JFrame {
             .layer.conv2D(25, 25, 3, 2, 0)
             .activation.gelu()
             .layer.flatten()
+            // Bottleneck (use a moderate size to keep information)
             .layer.dense(100, 1)
             .activation.gelu()
-            .build();
-        NeuralNetwork neuralNetworkDecoder = new NetworkBuilder()
-            .optimizer.adam()
-            .distribution.xavier()
+            // Decoder
             .layer.dense(1, 300)
             .activation.gelu()
             .layer.dense(300, 400)
@@ -85,7 +86,6 @@ public class AutoEncoder extends JFrame {
             .layer.dense(400, 784)
             .activation.gelu()
             .build();
-        private final static LossFunction decoderLossFunction = new L1();
         
         // TODO: wouldn't it be usefull if the loss function of an image gets determined by how much a number looks like a number? 
         // a algorithm would be usefull which compares the generated image and how it deviates from pixels near by from the original
@@ -93,8 +93,6 @@ public class AutoEncoder extends JFrame {
         public Scene() {
             imageList = MNISTLoader.trainData();
             System.out.println(imageList.size());
-            labelList = MNISTLoader.trainLabels();
-            
             startAsyncThreads();
         }
         
@@ -111,59 +109,48 @@ public class AutoEncoder extends JFrame {
             }).start();
             
             new Thread(() -> {
+                // Batch training using the new DataSet API
+                int batchSize = 16;
+                DataSet trainSet = new MnistAutoEncoderDataset(batchSize, true);
                 while (true) {
-                    train();
+                    for (Batch batch : trainSet) {
+                        autoencoder.train(batch.inputs, batch.targets, learningRate);
+                    }
                 }
             }).start();
             
             new Thread(() -> {
+                DataSet testSet = new MnistAutoEncoderDataset(128, false);
                 while (true) {
-                    test();
+                    test(testSet);
                 }
             }).start();
         }
         
         float testError;
         
-        void test() {
-            float sumTotal = 0;
-            int iterations = 3000;
-            for (int i = 0; i < iterations; i++) {
-                int[] pixels = imageList.get(i);
-                float[] x = pixelsToFloat(pixels);
-                
-                Tensor encoderOutput = neuralNetworkEncoder.predictThreadSafe(Tensor.of(x));
-                Tensor decoderOutput = neuralNetworkDecoder.predictThreadSafe(encoderOutput);
-                
-                float[] totalError = decoderOutput.transpose().toFlatArray();
-                float sum = 0;
-                for (int e = 0; e < totalError.length; e++) {
-                    sum += Math.abs(x[e] - totalError[e]);
+        void test(DataSet testSet) {
+            float sumTotal = 0f;
+            int count = 0;
+            for (Batch batch : testSet) {
+                Tensor[] inputs = batch.inputs;
+                Tensor[] targets = batch.targets;
+                for (int i = 0; i < inputs.length; i++) {
+                    Tensor out = autoencoder.predictThreadSafe(inputs[i]);
+                    float[] y = out.transpose().toFlatArray();
+                    float[] x = targets[i].transpose().toFlatArray();
+                    float sum = 0f;
+                    for (int e = 0; e < y.length; e++) sum += Math.abs(x[e] - y[e]);
+                    sumTotal += sum / y.length;
+                    count++;
+                    if (count >= 3000) break; // cap for speed similar to previous logic
                 }
-                sumTotal += sum / totalError.length;
+                if (count >= 3000) break;
             }
-            testError = sumTotal / iterations;
+            if (count > 0) testError = sumTotal / count;
         }
         
-        int trainIndex;
-        
-        void train() {
-            trainIndex++;
-            trainIndex %= 60000;
-            
-            int[] pixels = imageList.get(trainIndex);
-            float[] x = pixelsToFloat(pixels);
-            
-            Tensor encoderOutput = neuralNetworkEncoder.predict(Tensor.of(x));
-//            Tensor decoderOutput = neuralNetworkDecoder.predict(encoderOutput);
-            
-            Tensor grad = neuralNetworkDecoder.trainSingleGrad(decoderLossFunction, encoderOutput, Tensor.of(x), learningRate);
-
-//       making gradient ascent on the encoder
-//      grad = grad.multiply(-1);
-            
-            neuralNetworkEncoder.backpropagate(grad, learningRate * 0.5f);
-        }
+        int thinkIndex;
         
         float[] pixelsToFloat(int[] pixels) {
             float[] output = new float[pixels.length];
@@ -181,7 +168,6 @@ public class AutoEncoder extends JFrame {
             return output;
         }
         
-        int thinkIndex;
         final static int IMAGE_CHANGE_TIME = 1300;
         long lastImageChange = System.currentTimeMillis();
         
@@ -202,17 +188,11 @@ public class AutoEncoder extends JFrame {
             graphics.drawImage(image, 0, 0, imageSize, imageSize, null);
             
             float[] inputs = pixelsToFloat(pixels);
-            Tensor x = neuralNetworkEncoder.predictThreadSafe(inputs);
-            
-            int[] lowResPixels = floatToPixels(x.transpose().toFlatArray());
-            image = new BufferedImage(7, 7, BufferedImage.TYPE_INT_RGB);
-            setPixels(lowResPixels, image);
-            graphics.drawImage(image, imageSize, 0, imageSize, imageSize, null);
-            
-            float[] y = neuralNetworkDecoder.predictThreadSafe(x).transpose().toFlatArray();
+            float[] y = autoencoder.predictThreadSafe(Tensor.of(inputs)).transpose().toFlatArray();
             int[] predictedPixels = floatToPixels(y);
             image = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
             setPixels(predictedPixels, image);
+            // Use right two-thirds to show only reconstruction; middle panel kept blank for simplicity
             graphics.drawImage(image, imageSize * 2, 0, imageSize, imageSize, null);
             
             graphics.setColor(Color.white);

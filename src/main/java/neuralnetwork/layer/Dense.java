@@ -85,20 +85,35 @@ public class Dense extends LearnableLayer {
         // dL/db = dL/dy (vector)
         float[] db = g;
         
-        // delegate parameter update to optimizer
-        if (this.optimizer == null) {
-            // if no optimizer set, fall back to plain SGD inline update (safe default)
-            Tensor dWT = Tensor.of(dW);
-            Tensor dbT = Tensor.of(db);
-            Tensor lrT = Tensor.of(learningRate);
-            
-            this.W = (Matrix) this.W.subtract(dWT.multiply(lrT));
-            this.b = (Vector) this.b.subtract(dbT.multiply(lrT));
+        // If we're in accumulate-only mode, just store gradients and skip the update
+        if (isAccumulateOnly()) {
+            setLastGradients(dW, db);
         } else {
-            this.optimizer.step(dW, db, learningRate);
+            // delegate parameter update to optimizer
+            if (this.optimizer == null) {
+                // if no optimizer set, fall back to plain SGD inline update (safe default)
+                Tensor dWT = Tensor.of(dW);
+                Tensor dbT = Tensor.of(db);
+                Tensor lrT = Tensor.of(learningRate);
+                
+                this.W = (Matrix) this.W.subtract(dWT.multiply(lrT));
+                this.b = (Vector) this.b.subtract(dbT.multiply(lrT));
+            } else {
+                this.optimizer.step(dW, db, learningRate);
+            }
         }
         
         // dL/dx = W^T @ (dL/dy)
         return W.transpose().matmul(gradOut);
+    }
+
+    @Override
+    public void applyGradients(float[][] dW, float[] db, float learningRate) {
+        if (dW == null && db == null) return;
+        if (this.optimizer != null) {
+            this.optimizer.step(dW, db, learningRate);
+        } else {
+            super.applyGradients(dW, db, learningRate);
+        }
     }
 }

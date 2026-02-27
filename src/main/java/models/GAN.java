@@ -72,9 +72,10 @@ public class GAN extends JFrame {
         int[][] images;
         int[] labels;
         int noiseCount = 10;
+        int batchSize = 16;
         LossFunction lossFunction = new BinaryCrossEntropy();
         LossFunction generatorLossFunction = new BinaryCrossEntropy();
-        float learningRate = 0.00001f;
+        float learningRate = 0.0001f;
         
         public Scene() {
             images = MNISTLoader.trainData().stream().toArray(int[][]::new);
@@ -88,13 +89,11 @@ public class GAN extends JFrame {
                 .distribution.xavier()
                 .layer.dense(noiseCount, 128)
                 .activation.gelu()
+                .layer.dropOut(0.3f)
                 .layer.dense(128, 256)
                 .activation.gelu()
-                .layer.dense(256, 512)
-                .activation.gelu()
-                .layer.dense(512, 1024)
-                .activation.gelu()
-                .layer.dense(1024, imageResolution * imageResolution)
+                .layer.dropOut(0.3f)
+                .layer.dense(256, imageResolution * imageResolution)
                 .activation.sigmoid()
                 .build();
             
@@ -103,12 +102,13 @@ public class GAN extends JFrame {
                 .distribution.xavier()
                 .layer.dense(imageResolution * imageResolution, 512)
                 .activation.gelu()
-                .layer.dropOut(0.3f)
+                .layer.dropOut(0.9f)
                 .layer.dense(512, 256)
                 .activation.gelu()
-                .layer.dropOut(0.3f)
+                .layer.dropOut(0.4f)
                 .layer.dense(256, 256)
                 .activation.gelu()
+                .layer.dropOut(0.2f)
                 .layer.dense(256, 1)
                 .activation.sigmoid()
                 .build();
@@ -144,51 +144,79 @@ public class GAN extends JFrame {
             return generator.predict(Tensor.of(noiseData));
         }
         
+        Tensor[] generateBatch(int n) {
+            Tensor[] out = new Tensor[n];
+            for (int i = 0; i < n; i++) {
+                out[i] = generateData();
+            }
+            return out;
+        }
+        
         void trainGenerator() {
-            Tensor generatedData = generateData();
-            float[] generatedFloat = generatedData.toFlatArray();
-            
-            // train generator
-            Tensor grad = discriminator.trainSingleGrad(
-                lossFunction,
-                Tensor.of(generatedFloat),
-                Tensor.of(new float[] { 1 }),
-                0
-            );
-            generatorLoss.add(generatorLossFunction.loss(grad, generatedData));
-            generator.backpropagate(
-                grad,
-                learningRate
-            );
+            // Use a mini-batch: compute discriminator gradients w.r.t. its inputs for many fake samples,
+            // average them, then backpropagate once through the generator.
+            Tensor[] fake = generateBatch(batchSize);
+            float[] gradSum = null;
+            float lossSum = 0f;
+            for (Tensor sample : fake) {
+                Tensor grad = discriminator.trainSingleGrad(
+                    lossFunction,
+                    sample,
+                    Tensor.of(new float[] { 1 }),
+                    0
+                );
+                // keep same displayed metric as before (loss between grad and generated sample)
+                lossSum += generatorLossFunction.loss(grad, sample);
+                float[] g = grad.toFlatArray();
+                if (gradSum == null) gradSum = new float[g.length];
+                for (int i = 0; i < g.length; i++) gradSum[i] += g[i];
+            }
+            if (gradSum == null) return;
+            float inv = 1f / batchSize;
+            for (int i = 0; i < gradSum.length; i++) gradSum[i] *= inv;
+            generatorLoss.add(lossSum * inv);
+            generator.backpropagate(Tensor.of(gradSum), learningRate);
         }
         
         boolean trainDiscriminatorLast = false;
         
         void trainDiscriminator() {
-            Tensor generatedData = generateData();
-            
             if (trainDiscriminatorLast) {
-                // train discriminator
-                int[] pixels = images[trainIndex];
-                float[] realData = pixelsToFloat(pixels);
-                discriminatorLossReal.add(
-                    discriminator.trainSingle(
-                        lossFunction,
-                        Tensor.of(realData),
-                        Tensor.of(new float[] { 1 }),
-                        learningRate
-                    )
-                );
+                // Real batch
+                Tensor[] inputs = new Tensor[batchSize];
+                Tensor[] targets = new Tensor[batchSize];
+                for (int i = 0; i < batchSize; i++) {
+                    int idx = (trainIndex + i) % images.length;
+                    inputs[i] = Tensor.of(pixelsToFloat(images[idx]));
+                    targets[i] = Tensor.of(new float[] { 1 });
+                }
+                // compute average loss for display
+                float lossAvg = 0f;
+                for (int i = 0; i < batchSize; i++) {
+                    Tensor yhat = discriminator.predict(inputs[i]);
+                    lossAvg += lossFunction.loss(targets[i], yhat);
+                }
+                lossAvg /= batchSize;
+                discriminatorLossReal.add(lossAvg);
+                // batch update
+                discriminator.train(inputs, targets, learningRate);
             } else {
-                discriminatorLossFake.add(
-                    discriminator.trainSingle(
-                        lossFunction,
-                        generatedData,
-                        Tensor.of(new float[] { 0 }),
-                        learningRate
-                    )
-                );
+                // Fake batch
+                Tensor[] inputs = generateBatch(batchSize);
+                Tensor[] targets = new Tensor[batchSize];
+                for (int i = 0; i < batchSize; i++) targets[i] = Tensor.of(new float[] { 0 });
+                float lossAvg = 0f;
+                for (int i = 0; i < batchSize; i++) {
+                    Tensor yhat = discriminator.predict(inputs[i]);
+                    lossAvg += lossFunction.loss(targets[i], yhat);
+                }
+                lossAvg /= batchSize;
+                discriminatorLossFake.add(lossAvg);
+                discriminator.train(inputs, targets, learningRate);
             }
+            // advance index by batch
+            trainIndex += batchSize;
+            if (trainIndex >= images.length) trainIndex = trainIndex % images.length;
             trainDiscriminatorLast = !trainDiscriminatorLast;
         }
         

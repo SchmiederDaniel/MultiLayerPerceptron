@@ -115,13 +115,17 @@ public class Conv2D extends LearnableLayer {
         // 4. Col2Im
         Tensor3D dInput = col2im(dXCols, lastInputShape, outH, outW);
         
-        // 5. Update
-        if (optimizer != null) {
-            optimizer.step(dW.getValues(), dbVals, learningRate);
+        // 5. Update or accumulate
+        if (isAccumulateOnly()) {
+            setLastGradients(dW.getValues(), dbVals);
         } else {
-            // Fallback
-            W = (Matrix) W.subtract(new Matrix(dW.getValues()).multiply(Tensor.of(learningRate)));
-            b = (Vector) b.subtract(new Vector(dbVals).multiply(Tensor.of(learningRate)));
+            if (optimizer != null) {
+                optimizer.step(dW.getValues(), dbVals, learningRate);
+            } else {
+                // Fallback
+                W = (Matrix) W.subtract(new Matrix(dW.getValues()).multiply(Tensor.of(learningRate)));
+                b = (Vector) b.subtract(new Vector(dbVals).multiply(Tensor.of(learningRate)));
+            }
         }
         
         return dInput;
@@ -205,5 +209,15 @@ public class Conv2D extends LearnableLayer {
     public Conv2D clone() {
         return new Conv2D((Matrix) W.deepCopy(), (Vector) b.deepCopy(),
             numFilters, kernelSize, stride, padding, optimizerType);
+    }
+
+    @Override
+    public void applyGradients(float[][] dW, float[] db, float learningRate) {
+        if (dW == null && db == null) return;
+        if (optimizer != null) {
+            optimizer.step(dW, db, learningRate);
+        } else {
+            super.applyGradients(dW, db, learningRate);
+        }
     }
 }

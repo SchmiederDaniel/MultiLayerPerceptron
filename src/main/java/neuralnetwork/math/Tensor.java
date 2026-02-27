@@ -356,6 +356,21 @@ public abstract class Tensor {
         throw new UnsupportedOperationException("einsum pattern not supported: " + pattern);
     }
     
+    /**
+     * Calculates the element-wise reciprocal: 1 / (value + epsilon).
+     * This prevents division by zero errors.
+     */
+    public Tensor reciprocal(float epsilon) {
+        return this.applyOperation(val -> 1.0f / (val + epsilon));
+    }
+    
+    /**
+     * Convenience reciprocal with a standard small epsilon (1e-8).
+     */
+    public Tensor reciprocal() {
+        return reciprocal(1e-8f);
+    }
+    
     @Override
     public String toString() {
         return type() + "(shape=" + java.util.Arrays.toString(shape()) + ")";

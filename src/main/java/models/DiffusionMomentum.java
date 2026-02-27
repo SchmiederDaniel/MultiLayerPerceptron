@@ -3,7 +3,8 @@ package models;
 import models.dataset.MNISTLoader;
 import neuralnetwork.NetworkBuilder;
 import neuralnetwork.NeuralNetwork;
-import neuralnetwork.lossfunction.*;
+import neuralnetwork.lossfunction.LossFunction;
+import neuralnetwork.lossfunction.MeanSquareError;
 import neuralnetwork.math.Tensor;
 import oldneuralnetwork.NumpyArray;
 
@@ -16,9 +17,9 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class Diffusion extends JFrame {
+public class DiffusionMomentum extends JFrame {
     public static void main(String[] args) {
-        new Diffusion();
+        new DiffusionMomentum();
     }
     
     /*
@@ -35,7 +36,7 @@ public class Diffusion extends JFrame {
     static JSlider sliderViewSteps = new JSlider(1, Scene.MAX_STEP_SIZE - 1, Scene.MAX_STEP_SIZE / 2);
     JSlider sliderLearningRate = new JSlider(0, 1000000, (int) (Scene.learningRate * 1000000d * 4d));
     
-    public Diffusion() {
+    public DiffusionMomentum() {
         setLayout(null);
         scene = new Scene();
         add(scene);
@@ -89,24 +90,25 @@ public class Diffusion extends JFrame {
         int[] labels;
         int[] testLabels;
         
-        private static final int MAX_STEP_SIZE = 50;
+        private static final int STEP_INDEX_COUNT = 10;
+        private static final int MAX_STEP_SIZE = 400;
         static float learningRate = 0.0001f;
         LossFunction lossFunction = new MeanSquareError();
         static NeuralNetwork neuralNetwork = new NetworkBuilder()
             .optimizer.adam()
             .distribution.xavier()
-//            .layer.averageNorm()
-            .layer.dense(imageResolution * imageResolution, 256)
+            .layer.dense(imageResolution * imageResolution + STEP_INDEX_COUNT, 512)
             .activation.gelu()
-            .layer.dense(256, 128)
+            .layer.dense(512, 512)
             .activation.gelu()
-            .layer.dense(128, 128)
+            .layer.dense(512,  512)
             .activation.gelu()
-            .layer.dense(128, 256)
+            .layer.dense(512, 512)
             .activation.gelu()
-            .layer.dense(256, imageResolution * imageResolution)
+            .layer.dense(512, imageResolution * imageResolution)
             .activation.sigmoid()
             .build();
+        static float thinkStepSize = 1f; // 0.5d = best
         
         public Scene() {
             images = MNISTLoader.trainData().stream().toArray(int[][]::new);
@@ -166,41 +168,45 @@ public class Diffusion extends JFrame {
             final int BATCH_SIZE = 32;
             Tensor[] batchInputs = new Tensor[BATCH_SIZE];
             Tensor[] batchTargets = new Tensor[BATCH_SIZE];
-            
+
             // Optionally compute average pre-train loss for UI display
             float lossSum = 0f;
-            
+
             for (int b = 0; b < BATCH_SIZE; b++) {
                 // Advance training index sequentially to iterate through dataset
                 if (trainIndex >= images.length) trainIndex = 0;
                 int idx = trainIndex++;
-                
+
                 // Random diffusion step per sample
                 int i = ThreadLocalRandom.current().nextInt(MAX_STEP_SIZE);
-                
+
                 int[] pixels = images[idx];
                 float[] realData = pixelsTofloat(pixels);
-                
+
                 float[] input = addNoise(idx, realData, convertNoiseStrength((float) i / MAX_STEP_SIZE));
                 float[] target = addNoise(idx, realData, convertNoiseStrength((i - 1f) / MAX_STEP_SIZE));
                 target = subtract(input, target);
                 // Needs amplification as in original single-sample version
                 target = multiply(target, MAX_STEP_SIZE * 2f);
                 target = add(target, 0.5f);
-                
-                Tensor in = Tensor.of(input);
+
+                float[] state = new float[STEP_INDEX_COUNT];
+                state[(int) ((float) i / MAX_STEP_SIZE * STEP_INDEX_COUNT)] = 1f;
+                float[] input2 = addValuesToArray(input, state);
+
+                Tensor in = Tensor.of(input2);
                 Tensor tg = Tensor.of(target);
                 batchInputs[b] = in;
                 batchTargets[b] = tg;
-                
+
                 // Compute loss using thread-safe prediction for display purposes
                 Tensor pred = neuralNetwork.predictThreadSafe(in);
                 lossSum += lossFunction.loss(tg, pred);
             }
-            
+
             // Average loss and add to deque
             lastLosses.add(lossSum / BATCH_SIZE);
-            
+
             // Perform the batch training step
             neuralNetwork.train(batchInputs, batchTargets, learningRate);
 
@@ -249,9 +255,8 @@ public class Diffusion extends JFrame {
             BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
             Graphics2D graphics = bufferedImage.createGraphics();
             
-            float sliderPercentage = (float) sliderViewSteps.getValue() / MAX_STEP_SIZE;
             float[] pixels = pixelsTofloat(testImages[thinkIndex]);
-            float[] noisy = addNoise(thinkIndex, pixels, sliderPercentage);
+            float[] noisy = addNoise(thinkIndex, pixels, (float) sliderViewSteps.getValue() / MAX_STEP_SIZE);
             
             int[] decodedPixels = floatToPixels(noisy);
             drawPixels(graphics, decodedPixels, 0, height / 5 * 4, width / 5, height / 5);
@@ -261,20 +266,29 @@ public class Diffusion extends JFrame {
             float imageSize = width / 5f;
             
             final float[] noisyOriginal = noisy;
+            float imageCounter = 0;
             int counter = 0;
-            float stepCount = MAX_STEP_SIZE;
-            int MAX_IMAGE_COUNT = 20;
-            float percentagePerImage = (1f - sliderPercentage) / MAX_IMAGE_COUNT;
-            float lastImagePercentage = 0;
-            for (float percentage = sliderPercentage; percentage <= 1; percentage += 1f / stepCount) {
-//            for (float i = sliderViewSteps.getValue(); i >= 0; i -= thinkStepSize) {
-                float[] output = neuralNetwork.predictThreadSafe(noisy).transpose().toFlatArray();
-                output = subtract(output, 0.5f);
-                output = devide(output, MAX_STEP_SIZE / 2f); // Needs to be amplified. For explanation see in training
-                noisy = subtract(noisy, output);
+            float[] velocity = new float[noisy.length];
+            float momentum = 0.5f; // Momentum factor
+
+            for (float i = sliderViewSteps.getValue(); i >= 0; i -= thinkStepSize) {
+                float[] state = new float[STEP_INDEX_COUNT];
+                state[(int) (i / MAX_STEP_SIZE * STEP_INDEX_COUNT)] = 1;
+                float[] input = addValuesToArray(noisy, state);
+                Tensor output = neuralNetwork.predictThreadSafe(input).transpose();
+                output = output.subtract(Tensor.of(0.5f));
+                output = output.divide(Tensor.of(MAX_STEP_SIZE / 2f));
+                
+                float[] update = output.toFlatArray();
+                for (int j = 0; j < velocity.length; j++) {
+                    velocity[j] = lerp(velocity[j],update[j], momentum);
+                    noisy[j] -= velocity[j];
+                }
+                
                 noisy = minmax(noisy, 0, 1);
                 
-                if (percentage > lastImagePercentage + percentagePerImage) {
+                int i2 = (int) (sliderViewSteps.getValue() - i);
+                if (((float) i2 / sliderViewSteps.getValue() * 20d) - imageCounter > 1 || i2 == sliderViewSteps.getValue() - 1) {
                     decodedPixels = floatToPixels(noisy);
                     int x = counter % 5;
                     int y = counter / 5;
@@ -286,8 +300,8 @@ public class Diffusion extends JFrame {
                         (int) imageSize,
                         (int) imageSize
                     );
+                    imageCounter = (float) i2 / sliderViewSteps.getValue() * 20f;
                     counter++;
-                    lastImagePercentage = percentage;
                 }
             }
             drawPixels(graphics, floatToPixels(noisy), height / 5 * 2, height / 5 * 4, width / 5, height / 5);
@@ -296,6 +310,18 @@ public class Diffusion extends JFrame {
             drawPixels(graphics, floatToPixels(difference), height / 5 * 3, height / 5 * 4, width / 5, height / 5);
             
             return bufferedImage;
+        }
+        
+        /**
+         * Linearly interpolates between two values.
+         * * @param a      The starting value (used when weight is 0.0)
+         * @param b      The ending value (used when weight is 1.0)
+         * @param weight A value between 0.0 and 1.0 representing the blend
+         * @return       The weighted combination of a and b
+         */
+        public static float lerp(float a, float b, float weight) {
+            // Standard lerp formula
+            return a + weight * (b - a);
         }
         
         public void paint(Graphics graphics) {

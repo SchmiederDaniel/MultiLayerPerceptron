@@ -140,6 +140,11 @@ public class NetworkBuilder {
             layerList.add(new Dropout(dropOutRate));
             return networkBuilder;
         }
+        
+        public NetworkBuilder averageNorm() {
+            layerList.add(new AverageNorm());
+            return networkBuilder;
+        }
 
 //    public NetworkBuilder dropOut(double dropOutRate) {
 //      return dropOut((float) dropOutRate);
