@@ -45,3 +45,4 @@ bin/
 .idea
 /src/main/resources/minecrafttextures/block/
 /src/main/resources/MovieCorpus.txt
+/src/main/resources/mnist

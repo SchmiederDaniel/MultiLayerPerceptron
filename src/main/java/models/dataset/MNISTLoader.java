@@ -10,19 +10,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MNISTLoader {
     public static List<int[]> trainData() {
-        return readImages("train-images.idx3-ubyte");
+        return readImages("mnist/train-images.idx3-ubyte");
     }
     
     public static List<int[]> testData() {
-        return readImages("t10k-images.idx3-ubyte");
+        return readImages("mnist/t10k-images.idx3-ubyte");
     }
     
     public static List<Integer> trainLabels() {
-        return readLabels("train-labels.idx1-ubyte");
+        return readLabels("mnist/train-labels.idx1-ubyte");
     }
     
     public static List<Integer> testLabels() {
-        return readLabels("t10k-labels.idx1-ubyte");
+        return readLabels("mnist/t10k-labels.idx1-ubyte");
     }
     
     private static List<int[]> readImages(String fileName) {

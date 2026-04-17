@@ -274,7 +274,7 @@ public class MNISTClassifier extends JFrame {
                 graphics.setColor(Color.black);
                 graphics.setFont(font);
                 graphics.drawString(
-                    "Error: " + (testingErrorList.getLast()),
+                    "Loss: " + (testingErrorList.getLast()),
                     getHeight() * 2 + 10,
                     getHeight() - 20
                 );
