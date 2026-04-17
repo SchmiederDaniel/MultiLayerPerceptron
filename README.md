@@ -42,7 +42,7 @@ Screenshots of them can be seen here:
 A simple implementation of an AutoEncoder which compresses a image from the MNIST dataset into a single floating point
 value and then tries to reconstruct it.
 
-![AutoEncoder.jpg](assets/AutoEncoder.png)
+![AutoEncoder.jpg](assets/AutoEncoder.jpg)
 
 ### Diffusion
 
@@ -51,7 +51,7 @@ The implementation allows you to remove noise and also generate new numbers base
 
 In this image the Diffusion model generated a new image just based from image noise.
 
-![Diffusion.jpg](assets/Diffusion.png)
+![Diffusion.jpg](assets/Diffusion.jpg)
 
 ### Classification
 
@@ -59,7 +59,7 @@ A typical digit classification example using a convolutional neural network.
 
 It can correctly detect the self-drawn digit on the left side, which it had never seen doing training.
 
-![Classification.jpg](assets/Classification.png)
+![Classification.jpg](assets/Classification.jpg)
 
 ### Old projects using the old Neural Network implementation
 
@@ -77,4 +77,4 @@ An implementation which provides an implementation of an AutoEncoder featuring a
 which maps images onto a 2D grid, illustrating the compression/distribution of data within the model's 2D latent
 bottleneck.
 
-![AutoEncoderBottleneck.jpg](assets/AutoEncoderBottleneck.png)
+![AutoEncoderBottleneck.jpg](assets/AutoEncoderBottleneck.jpg)
