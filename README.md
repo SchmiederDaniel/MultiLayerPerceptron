@@ -5,7 +5,7 @@ I experimented a lot using the public MNIST dataset of handwritten digits.
 
 ## History
 
-This project was initially developed as an implementation of a deep nng Train.eural network, based on Daniel Shiffman’s
+This project was initially developed as an implementation, based on Daniel Shiffman’s
 2017 video series Neural Networks from The Coding Train.
 The neural network implementation has been rewritten since which is available under `src/main/java/neuralnetwork`.
 
